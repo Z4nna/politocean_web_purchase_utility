@@ -9,6 +9,7 @@ struct KeywordSearchRequest {
 }
 
 #[derive(Serialize)]
+#[allow(non_snake_case)]
 struct InnerRequest {
     keyword: String,
     records: u32,
@@ -18,16 +19,19 @@ struct InnerRequest {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(non_snake_case)]
 struct MouserResponse {
     SearchResults: Option<SearchResults>,
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(non_snake_case)]
 struct SearchResults {
     Parts: Vec<Part>,
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(non_snake_case)]
 pub struct Part {
     pub Manufacturer: Option<String>,
     pub ManufacturerPartNumber: Option<String>,
@@ -50,6 +54,7 @@ pub struct MouserPart {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(non_snake_case)]
 pub struct PriceBreak {
     pub Quantity: u32,
     pub Price: String,

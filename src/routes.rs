@@ -29,6 +29,7 @@ fn orders_routes() -> Router<app::AppState> {
         .route("/orders/:id/edit", get(edit_order::edit_order_handler))
         .route("/orders/:id/edit/submit", post(edit_order::submit_order_handler))
         .route("/orders/:id/edit/generate-bom", post(edit_order::generate_bom_handler))
+        .route("/orders/:id/edit/download-bom", post(edit_order::download_bom_handler))
         .route("/orders/:id/ready", post(edit_order::mark_order_ready_handler))
         .route("/orders/:id/unready", post(edit_order::mark_order_unready_handler))
         .route("/orders/:id/confirm", post(edit_order::mark_order_confirmed_handler))

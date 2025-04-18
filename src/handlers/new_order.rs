@@ -51,10 +51,10 @@ pub async fn submit_order_handler(
         let proposal_key = format!("items_proposal_{}", index);
         let project_key = format!("items_project_{}", index);
 
-        let manifacturer = user_form.get(&man_key).unwrap().to_string();
-        let manifacturer_pn = user_form.get(&pn_key).unwrap().to_string();
-        let proposal = user_form.get(&proposal_key).unwrap().to_string();
-        let project = user_form.get(&project_key).unwrap().to_string();
+        let manifacturer = user_form.get(&man_key).unwrap_or(&"".to_string()).to_string();
+        let manifacturer_pn = user_form.get(&pn_key).unwrap_or(&"".to_string()).to_string();
+        let proposal = user_form.get(&proposal_key).unwrap_or(&"Elettronica generale".to_string()).to_string();
+        let project = user_form.get(&project_key).unwrap_or(&"Varie per lab".to_string()).to_string();
         let quantity = user_form
             .get(&quantity_key)
             .unwrap()
@@ -64,11 +64,11 @@ pub async fn submit_order_handler(
         order::add_item_to_order(
             &app_state.connection_pool,
             order_id,
-            manifacturer.to_string(),
-            manifacturer_pn.to_string(),
+            manifacturer,
+            manifacturer_pn,
             quantity,
-            "Sensoristica AUV".to_string(),
-            "Nuovo ROV".to_string()
+            proposal,
+            project,
         )
         .await?;
     }

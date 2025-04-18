@@ -175,6 +175,7 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
 
     // create excel files
     let mut mouser_book = excel::create_bom_file();
+    let mut _digikey_book = excel::create_bom_file();
 
     // for each item, retrieve info from mouser / digikey
     for item in order_items {
@@ -184,10 +185,10 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
             item.quantity as u32)
             .await
             .map_err(|e| DataError::FailedQuery(e.to_string()))?;
+        let _digikey_part_opt = 0;
         match  mouser_part_opt {
             Some(mouser_part) => {
                 // check if item is available
-                println!("{} vs {}", mouser_part.availability, item.quantity);
                 if mouser_part.availability > item.quantity as u32 {
                     excel::add_item_to_bom(
                         &mut mouser_book, 
@@ -245,7 +246,5 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
     .await
     .map_err(|e| DataError::Query(e))?;
 
-    // save bom file to disk
-    excel::save_to_file(&mouser_book);
     Ok(())
 }
