@@ -7,6 +7,9 @@ use axum::{
 };
 use tower_sessions::Session;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
+use zip::write::FileOptions;
+use std::io::Write;
+use std::io::Cursor;
 
 pub async fn edit_order_handler(
     State(app_state): State<AppState>,
@@ -100,49 +103,85 @@ pub async fn generate_bom_handler(
     Ok(Redirect::to(&format!("/orders/{}/edit", order_id)).into_response())
 }
 
-pub async fn download_bom_handler(State(app_state): State<AppState>, _session: Session,Path(order_id): Path<i32>,) -> Result<Response, errors::AppError> {
+pub async fn download_bom_handler(
+    State(app_state): State<AppState>,
+    _session: Session,
+    Path(order_id): Path<i32>,
+) -> Result<Response<Body>, errors::AppError> {
     order::generate_bom(&app_state.connection_pool, order_id).await?;
+
     let bom_result = sqlx::query!(
-        "SELECT bom_file_mouser, filename FROM order_bom WHERE order_id = $1",
+        "SELECT bom_file_mouser, bom_file_digikey, filename FROM order_bom WHERE order_id = $1",
         order_id
     )
     .fetch_optional(&app_state.connection_pool)
     .await
     .map_err(|e| errors::AppError::Database(errors::DataError::Query(e)))?;
 
-    match bom_result {
-        Some(record) => {
-            let bytes = record.bom_file_mouser.unwrap();
-            let raw_filename = record
-                .filename
-                .unwrap_or_else(|| format!("bom_{}.xlsx", order_id));
+    if let Some(record) = bom_result {
+        let mouser_bytes = record.bom_file_mouser.ok_or_else(|| {
+            errors::AppError::Database(errors::DataError::FailedQuery(
+                "Missing Mouser BOM".to_string(),
+            ))
+        })?;
 
-            let filename = if raw_filename.to_lowercase().ends_with(".xlsx") {
-                raw_filename
-            } else {
-                format!("{}.xlsx", raw_filename)
-            };
+        let digikey_bytes = record.bom_file_digikey.ok_or_else(|| {
+            errors::AppError::Database(errors::DataError::FailedQuery(
+                "Missing Digikey BOM".to_string(),
+            ))
+        })?;
 
-            let encoded = utf8_percent_encode(&filename, NON_ALPHANUMERIC).to_string();
-            let content_disposition = format!(
-                r#"attachment; filename="{}"; filename*=UTF-8''{}"#,
-                filename, encoded
-            );
+        let raw_filename = record
+            .filename
+            .unwrap_or_else(|| format!("bom_{}", order_id));
+        let base_filename = raw_filename.trim_end_matches(".xlsx");
 
-            // Convert Bytes into Body
-            let response = Response::builder()
-                .status(StatusCode::OK)
-                .header(
-                    header::CONTENT_TYPE,
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                )
-                .header(header::CONTENT_DISPOSITION, HeaderValue::from_str(&content_disposition).unwrap())
-                .body(Body::from(bytes))
-                .unwrap();
-            Ok(response)
+        let mut buffer = Cursor::new(Vec::new());
+
+        {
+            let mut zip = zip::ZipWriter::new(&mut buffer);
+
+            let options = FileOptions::default().compression_method(zip::CompressionMethod::Stored);
+
+            zip.start_file(format!("{}_mouser.xlsx", base_filename), options).map_err(|e| {
+                errors::AppError::Database(errors::DataError::FailedQuery(e.to_string()))
+            })?;
+            zip.write_all(&mouser_bytes).map_err(|e| {
+                errors::AppError::Database(errors::DataError::FailedQuery(e.to_string()))
+            })?;
+
+            zip.start_file(format!("{}_digikey.xlsx", base_filename), options).map_err(|e| {
+                errors::AppError::Database(errors::DataError::FailedQuery(e.to_string()))
+            })?;
+            zip.write_all(&digikey_bytes).map_err(|e| {
+                errors::AppError::Database(errors::DataError::FailedQuery(e.to_string()))
+            })?;
+
+            zip.finish().map_err(|e| {
+                errors::AppError::Database(errors::DataError::FailedQuery(e.to_string()))
+            })?;
         }
-        None => {
-            Err(errors::AppError::Database(errors::DataError::FailedQuery("No BOM found for order".to_string())))
-        }
+
+        let zip_filename = format!("{}_bom.zip", base_filename);
+        let encoded = utf8_percent_encode(&zip_filename, NON_ALPHANUMERIC).to_string();
+        let content_disposition = format!(
+            r#"attachment; filename="{}"; filename*=UTF-8''{}"#,
+            zip_filename, encoded
+        );
+
+        let zip_bytes = buffer.clone().into_inner();
+
+        let response = Response::builder()
+            .status(StatusCode::OK)
+            .header(header::CONTENT_TYPE, "application/zip")
+            .header(header::CONTENT_DISPOSITION, HeaderValue::from_str(&content_disposition).unwrap())
+            .body(Body::from(zip_bytes))
+            .unwrap();
+
+        Ok(response)
+    } else {
+        Err(errors::AppError::Database(errors::DataError::FailedQuery(
+            "No BOM found for order".to_string(),
+        )))
     }
 }

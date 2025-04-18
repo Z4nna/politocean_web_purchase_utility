@@ -192,41 +192,84 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
             item.quantity as u32)
             .await
             .map_err(|e| DataError::FailedQuery(e.to_string()))?;
-        match mouser_part_opt {
-            Some(mouser_part) => {
-                // check if item is available
-                if mouser_part.availability > item.quantity as u32 {
-                    excel::add_item_to_bom(
-                        &mut mouser_book, 
-                        mouser_part.manufacturer, 
-                        mouser_part.manufacturer_pn, 
-                        item.quantity, 
-                        mouser_part.description,
-                        mouser_part.unit_price, 
-                        item.proposal, 
-                        mouser_part.product_url, 
-                        item.project,
-                        "".to_string()).map_err(|e| DataError::FailedQuery(e.to_string()))?;
-                } else {
+        match (mouser_part_opt, digikey_part_opt) {
+            (Some(mouser_part), Some(digikey_part)) => {
+                // check if item is available on both mouser and digikey
+                println!("id: {}, mouser_price: {}, digikey_price: {}", item.manifacturer_pn, mouser_part.unit_price, digikey_part.unit_price);
+                if (mouser_part.availability >= item.quantity as u32)
+                && (mouser_part.unit_price < digikey_part.unit_price) 
+                && mouser_part.unit_price > 0.0 {
                     excel::add_item_to_bom(
                         &mut mouser_book,
                         mouser_part.manufacturer,
                         mouser_part.manufacturer_pn,
-                        0,
+                        item.quantity,
                         mouser_part.description,
                         mouser_part.unit_price,
                         item.proposal,
                         mouser_part.product_url,
                         item.project,
                         "".to_string()).map_err(|e| DataError::FailedQuery(e.to_string()))?;
+                } else if digikey_part.availability >= item.quantity as u32 
+                && digikey_part.unit_price < mouser_part.unit_price 
+                && digikey_part.unit_price > 0.0 {
+                    excel::add_item_to_bom(
+                        &mut digikey_book,
+                        digikey_part.manufacturer,
+                        digikey_part.manufacturer_pn,
+                        item.quantity,
+                        digikey_part.description,
+                        digikey_part.unit_price,
+                        item.proposal,
+                        digikey_part.product_url,
+                        item.project,
+                        "".to_string()).map_err(|e| DataError::FailedQuery(e.to_string()))?;
+                } else {
+                    excel::add_item_to_bom(
+                        &mut mouser_book,
+                        item.manifacturer,
+                        item.manifacturer_pn,
+                        0,
+                        "".to_string(),
+                        0.0,
+                        item.proposal,
+                        "".to_string(),
+                        item.project,
+                        "".to_string()).map_err(|e| DataError::FailedQuery(e.to_string()))?;
                 }
             },
-            None => {
+            (None, Some(digikey_part)) => { // only available on digikey
                 excel::add_item_to_bom(
-                    &mut mouser_book, 
-                    item.manifacturer, 
-                    item.manifacturer_pn, 
-                    0, 
+                    &mut digikey_book, 
+                    digikey_part.manufacturer, 
+                    digikey_part.manufacturer_pn, 
+                    item.quantity, 
+                    digikey_part.description,
+                    digikey_part.unit_price,
+                    item.proposal,
+                    digikey_part.product_url,
+                    item.project,
+                    "".to_string()).map_err(|e| DataError::FailedQuery(e.to_string()))?;
+            }
+            (Some(mouser_part), None) => { // only available on mouser
+                excel::add_item_to_bom(
+                    &mut mouser_book,
+                    mouser_part.manufacturer,
+                    mouser_part.manufacturer_pn,
+                    item.quantity,
+                    mouser_part.description,
+                    mouser_part.unit_price,
+                    item.proposal,
+                    mouser_part.product_url,
+                    item.project,
+                    "".to_string()).map_err(|e| DataError::FailedQuery(e.to_string()))?;
+            }
+            (None, None) => { // part not found
+                excel::add_item_to_bom(
+                    &mut mouser_book,
+                    item.manifacturer,
+                    item.manifacturer_pn,
+                    0,
                     "".to_string(),
                     0.0,
                     item.proposal,
@@ -237,15 +280,18 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
         }
     }
     let mouser_bom_bytes = excel::save_to_bytes(&mouser_book).map_err(|e| DataError::FailedQuery(e.to_string()))?;
+    let digikey_bom_bytes = excel::save_to_bytes(&digikey_book).map_err(|e| DataError::FailedQuery(e.to_string()))?;
     // save bom file to db
     sqlx::query!(
-        r#"INSERT INTO order_bom (order_id, bom_file_mouser, filename)
-            VALUES ($1, $2, $3)
+        r#"INSERT INTO order_bom (order_id, bom_file_mouser, bom_file_digikey, filename)
+            VALUES ($1, $2, $3, $4)
             ON CONFLICT (order_id) DO UPDATE 
             SET bom_file_mouser = EXCLUDED.bom_file_mouser,
+            bom_file_digikey = EXCLUDED.bom_file_digikey,
             filename = EXCLUDED.filename"#r,
         order_id,
         mouser_bom_bytes,
+        digikey_bom_bytes,
         order.description.replace(" ", "_").to_lowercase()
     )
     .execute(pool)

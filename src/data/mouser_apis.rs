@@ -131,7 +131,6 @@ pub async fn search_mouser(
                         .parse::<u32>()
                         .unwrap_or_default(),
                 };
-                println!("Availability: {:?}", part.Availability.as_ref());
                 return Ok(Some(mouser_part));
             }
             Ok(None)

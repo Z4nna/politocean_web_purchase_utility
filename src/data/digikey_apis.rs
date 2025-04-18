@@ -116,7 +116,6 @@ async fn digikey_get_token() -> Result<String, Box<dyn std::error::Error>> {
     }
 
     let token: TokenResponse = token_response.json().await?;
-    println!("Access token acquired: {}", token.access_token);
     Ok(token.access_token)
 }
 
@@ -161,16 +160,14 @@ pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &st
     }
 
     let myresponse = search_response.json::<DigiKeySearchResult>().await?;
-    println!("Got {} results", myresponse.products_count);
 
     let mut possible_products: Vec<Product> = Vec::new();
     for product in myresponse.products {
-        println!("{} vs {}", product.manufacturer_product_number, query_manufacturer_pn);
         if &product.manufacturer_product_number == query_manufacturer_pn {
             possible_products.push(product);
         }
     }
-    println!("Found {} possible products", possible_products.len());
+
     if possible_products.len() > 1 {
         // handle multiple products with the same manufacturer part number
     }
