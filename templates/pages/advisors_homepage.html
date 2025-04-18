@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ordini</title>
+    <link rel="stylesheet" href="/static/css/global.css" />
+    <link rel="stylesheet" href="/static/css/advisors_homepage.css" />
+</head>
+<body>
+    <h1>Elenco Ordini</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID Ordine</th>
+                <th>Descrizione</th>
+                <th>Data</th>
+                <th>Stato</th>
+                <th>Azioni</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.description }}</td>
+                <td>{{ order.get_date() }}</td>
+                <td style="background-color: {{ order.get_bg_color() }};">
+                    {{ order.get_status() }}
+                </td>
+                <td class="actions-container">
+                    {% if order.confirmed == false %}
+                        <a href="/orders/{{ order.id }}/edit" class="button action" >Edit</a>
+                        {% if order.ready == false %}
+                        <form action="/orders/{{ order.id }}/ready" method="post" class="inline-form action">
+                            <button type="submit" class="button">Mark as ready</button>
+                        </form>
+                        {% else %}
+                        <form action="/orders/{{ order.id }}/unready" method="post" class="inline-form action">
+                            <button type="submit" class="button">Mark as unready</button>
+                        </form>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <hr>
+
+    <div style="margin-top: 1rem;">
+        <a href="/orders/new" class="button">➕ Nuovo Ordine</a>
+    </div>
+</body>
+</html>

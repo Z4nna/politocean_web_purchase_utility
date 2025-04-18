@@ -1,0 +1,77 @@
+use std::collections::{HashSet, HashMap};
+use crate::models::templates::NewOrderTemplate;
+use askama::Template;
+use crate::{
+    models::app::AppState,
+    data::{errors, order},
+};
+use axum::{
+    extract::{Form, State}, response::{Html, IntoResponse, Redirect, Response}
+};
+use tower_sessions::Session;
+
+pub async fn new_order_handler() -> impl IntoResponse {
+    let html_string = NewOrderTemplate{}.render().unwrap();
+    Html(html_string).into_response()
+}
+
+pub async fn submit_order_handler(
+    State(app_state): State<AppState>,
+    session: Session,
+    Form(user_form): Form<HashMap<String, String>>,
+) -> Result<Response, errors::AppError> {
+    let order_author_id = session
+    .get::<i32>("authenticated_user_id")
+    .await
+    .map_err(|e| errors::AppError::Session(e))?.unwrap();
+    let description = user_form.get("description").unwrap().to_string();
+    let area_division = user_form.get("area_division").unwrap().to_string();
+    let area_sub_area = user_form.get("area_sub_area").unwrap().to_string();
+    let order_id = order::create_order(&app_state.connection_pool, order_author_id, description, area_division, area_sub_area).await?;
+
+    let mut indices: HashSet<i32> = HashSet::new();
+    // Collect valid indices based on existing keys
+    for key in user_form.keys().map(|s| s.to_string()) {
+        let maybe_index = key.strip_prefix("items_manifacturer_pn_");
+        match maybe_index {
+            Some(index_str) => {
+                let index = index_str.parse::<i32>().unwrap();
+                indices.insert(index);
+            }
+            None => {
+                continue;
+            }
+        }
+    }
+    // Now process only the indices that exist
+    for index in indices {
+        let man_key = format!("items_manifacturer_{}", index);
+        let pn_key = format!("items_manifacturer_pn_{}", index);
+        let quantity_key = format!("items_quantity_{}", index);
+        let proposal_key = format!("items_proposal_{}", index);
+        let project_key = format!("items_project_{}", index);
+
+        let manifacturer = user_form.get(&man_key).unwrap().to_string();
+        let manifacturer_pn = user_form.get(&pn_key).unwrap().to_string();
+        let proposal = user_form.get(&proposal_key).unwrap().to_string();
+        let project = user_form.get(&project_key).unwrap().to_string();
+        let quantity = user_form
+            .get(&quantity_key)
+            .unwrap()
+            .to_string()
+            .parse::<i32>()
+            .unwrap_or(1);
+        order::add_item_to_order(
+            &app_state.connection_pool,
+            order_id,
+            manifacturer.to_string(),
+            manifacturer_pn.to_string(),
+            quantity,
+            "Sensoristica AUV".to_string(),
+            "Nuovo ROV".to_string()
+        )
+        .await?;
+    }
+
+    Ok(Redirect::to("/home").into_response())
+}

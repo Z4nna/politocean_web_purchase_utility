@@ -1,0 +1,126 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f4f9;
+    margin: 0;
+    padding: 2rem;
+    color: #333;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+    color: #2c3e50;
+}
+
+form {
+    max-width: 1000px;
+    margin: 0 auto;
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+}
+
+label {
+    display: inline-block;
+    width: 100px;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+input[type="text"],
+input[type="number"] {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    margin: 0.25rem 0 1rem;
+    width: 200px;
+}
+
+input[type="number"] {
+    width: 80px;
+    text-align: center;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 1.5rem 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2rem;
+}
+
+thead {
+    background-color: #3498db;
+    color: white;
+}
+
+th, td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    border-right: 1px solid #e0e0e0;
+}
+
+th:last-child,
+td:last-child {
+    border-right: none;
+}
+
+tbody > tr:hover {
+    background-color: lightblue;
+}
+
+button[type="submit"] {
+    background-color: #3498db;
+    color: white;
+    padding: 0.75rem 1.25rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: block;
+    margin: 0 auto;
+    transition: background-color 0.3s ease;
+}
+
+.button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.button:hover {
+    background-color: steelblue;
+    color: white;
+}
+
+form.inline-form {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+}
+
+.actions-container {
+    display: flex;
+
+}
+
+.action {
+    margin-right: 10px;
+}

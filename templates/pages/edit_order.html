@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dettagli Ordine</title>
+    <link rel="stylesheet" href="/static/css/global.css" />
+    <link rel="stylesheet" href="/static/css/edit_order.css" />
+</head>
+<body>
+    <h1>Dettagli Ordine #{{ order.id }}</h1>
+
+    <section class="order-info">
+        <p><strong>Descrizione:</strong> {{ order.description }}</p>
+        <p><strong>Data:</strong> {{ order.get_date() }}</p>
+        <p><strong>Divisione:</strong> {{ order.area_division }}</p>
+        <p><strong>Sub-area:</strong> {{ order.area_sub_area }}</p>
+        <p><strong>Stato:</strong>
+            {% if order.confirmed %}
+                Confermato
+            {% else if order.ready %}
+                Pronto
+            {% else %}
+                In preparazione
+            {% endif %}
+        </p>
+    </section>
+
+    <h2>Articoli</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Produttore</th>
+                <th>Codice Articolo</th>
+                <th>Quantità</th>
+                <th>Proposta</th>
+                <th>Progetto</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.manifacturer }}</td>
+                <td>{{ item.manifacturer_pn }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.proposal }}</td>
+                <td>{{ item.project }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <br>
+    <a href="/home" class="button">Torna alla Home</a>
+    <form action="/orders/{{ order.id }}/edit/generate-bom" method="post"><button type="submit" class="button">Generate BOM</button></form>
+</body>
+</html>
