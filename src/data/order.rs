@@ -6,6 +6,8 @@ use crate::data::mouser_apis;
 
 use crate::data::excel;
 
+use super::digikey_apis;
+
 #[derive(sqlx::FromRow, Debug, Clone)]
 pub struct Order {
     pub id: i32,
@@ -175,7 +177,7 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
 
     // create excel files
     let mut mouser_book = excel::create_bom_file();
-    let mut _digikey_book = excel::create_bom_file();
+    let mut digikey_book = excel::create_bom_file();
 
     // for each item, retrieve info from mouser / digikey
     for item in order_items {
@@ -185,8 +187,12 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
             item.quantity as u32)
             .await
             .map_err(|e| DataError::FailedQuery(e.to_string()))?;
-        let _digikey_part_opt = 0;
-        match  mouser_part_opt {
+        let digikey_part_opt = digikey_apis::digikey_search(&item.manifacturer, 
+            &item.manifacturer_pn, 
+            item.quantity as u32)
+            .await
+            .map_err(|e| DataError::FailedQuery(e.to_string()))?;
+        match mouser_part_opt {
             Some(mouser_part) => {
                 // check if item is available
                 if mouser_part.availability > item.quantity as u32 {

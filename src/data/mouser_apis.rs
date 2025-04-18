@@ -95,7 +95,7 @@ pub async fn search_mouser(
                 let manufacturer = part.Manufacturer.unwrap_or_default();
                 let manufacturer_pn = part.ManufacturerPartNumber.unwrap_or_default();
                 // assure we return only the requested item
-                if manufacturer != query_manufacturer || manufacturer_pn != query_manufacturer_pn {
+                if manufacturer_pn != query_manufacturer_pn {
                     continue;
                 }
                 let mouser_part = MouserPart {

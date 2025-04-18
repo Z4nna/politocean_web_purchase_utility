@@ -100,11 +100,7 @@ pub async fn generate_bom_handler(
     Ok(Redirect::to(&format!("/orders/{}/edit", order_id)).into_response())
 }
 
-pub async fn download_bom_handler(
-    State(app_state): State<AppState>,
-    _session: Session,
-    Path(order_id): Path<i32>,
-) -> Result<Response, errors::AppError> {
+pub async fn download_bom_handler(State(app_state): State<AppState>, _session: Session,Path(order_id): Path<i32>,) -> Result<Response, errors::AppError> {
     order::generate_bom(&app_state.connection_pool, order_id).await?;
     let bom_result = sqlx::query!(
         "SELECT bom_file_mouser, filename FROM order_bom WHERE order_id = $1",
@@ -129,7 +125,7 @@ pub async fn download_bom_handler(
 
             let encoded = utf8_percent_encode(&filename, NON_ALPHANUMERIC).to_string();
             let content_disposition = format!(
-                "attachment; filename=\"{}\"; filename*=UTF-8''{}",
+                r#"attachment; filename="{}"; filename*=UTF-8''{}"#,
                 filename, encoded
             );
 
