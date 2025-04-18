@@ -197,8 +197,8 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
                 // check if item is available on both mouser and digikey
                 println!("id: {}, mouser_price: {}, digikey_price: {}", item.manifacturer_pn, mouser_part.unit_price, digikey_part.unit_price);
                 if (mouser_part.availability >= item.quantity as u32)
-                && (mouser_part.unit_price < digikey_part.unit_price) 
-                && mouser_part.unit_price > 0.0 {
+                && mouser_part.unit_price > 0.0
+                && (mouser_part.unit_price < digikey_part.unit_price || digikey_part.unit_price == 0.0)  {
                     excel::add_item_to_bom(
                         &mut mouser_book,
                         mouser_part.manufacturer,
@@ -211,7 +211,6 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
                         item.project,
                         "".to_string()).map_err(|e| DataError::FailedQuery(e.to_string()))?;
                 } else if digikey_part.availability >= item.quantity as u32 
-                && digikey_part.unit_price < mouser_part.unit_price 
                 && digikey_part.unit_price > 0.0 {
                     excel::add_item_to_bom(
                         &mut digikey_book,
