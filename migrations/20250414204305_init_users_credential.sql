@@ -32,7 +32,3 @@ INSERT INTO projects (name) VALUES
 ('Varie per lab'),
 ('Float'),
 ('E20');
-
-INSERT INTO users (username, password_hash, belonging_area_division, belonging_area_sub_area) VALUES
-('admin', 'adminpwd', 'R&D', 'Board'),
-('michelecarenini', 'MicheleCarenini25!', 'R&D', 'Software');

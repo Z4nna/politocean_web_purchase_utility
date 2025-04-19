@@ -26,8 +26,7 @@ pub async fn authenticate_user(
     })?;
 
     let hashed_password: &str = user.password_hash.as_str();
-    //let valid_password = bcrypt::verify(password, hashed_password)?;
-    let valid_password = password == hashed_password;
+    let valid_password = bcrypt::verify(password, hashed_password)?;
     println!("Password: {password:?}, hashed_password: {hashed_password:?}, valid_password: {valid_password:?}");
     if !valid_password {
         Err(DataError::FailedQuery("Invalid credentials".to_string()))

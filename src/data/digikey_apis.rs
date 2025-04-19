@@ -1,8 +1,9 @@
+use core::f64;
 use std::os::unix::process;
 
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use std::cmp::Ordering;
 use dotenvy::dotenv;
 
 #[derive(Debug, Deserialize)]
@@ -76,6 +77,52 @@ pub struct Manufacturer {
 pub struct ProductVariation {
     pub digi_key_product_number: String,
     pub standard_pricing: Option<Vec<PriceBreak>>,
+    pub quantity_availablefor_package_type: u32,
+    pub minimum_order_quantity: u32,
+}
+
+impl ProductVariation {
+    fn get_price(&self, quantity: u32) -> Option<f64> {
+        match self.clone().standard_pricing {
+            Some(price_breaks) => {
+                let mut unit_price = 0.0;
+                for price in price_breaks {
+                    if quantity >= price.break_quantity {
+                        unit_price = price.unit_price
+                    }
+                }
+                Some(unit_price)
+            },
+            None => {
+                return None;
+            }
+        }
+    }
+}
+
+impl PartialEq for ProductVariation {
+    fn eq(&self, other: &Self) -> bool {
+        self.get_price(0) == other.get_price(0)
+    }
+}
+
+impl Eq for ProductVariation {}
+
+impl PartialOrd for ProductVariation {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for ProductVariation {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let self_price = self.get_price(0).unwrap_or(f64::INFINITY);
+        let other_price = other.get_price(0).unwrap_or(f64::INFINITY);
+
+        self_price
+            .partial_cmp(&other_price)
+            .unwrap_or(Ordering::Equal)
+    }
 }
 
 #[derive(Deserialize, Debug, Serialize, Clone)]
@@ -124,6 +171,8 @@ pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &st
     let client_id = std::env::var("DIGIKEY_CLIENT_ID").expect("DIGIKEY_CLIENT_ID not set");
     // future addition: check if old token is still valid, and in this case use the old one
     let token = digikey_get_token().await?;
+    
+    println!("debug 0");
     let client = Client::new();
     // Step 2: Perform product search
     let url = format!("https://api.digikey.com/products/v4/search/keyword");
@@ -154,12 +203,15 @@ pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &st
         .json(&request_body)
         .send()
         .await?;
+    println!("debug 1");
 
     if !search_response.status().is_success() {
         return Err(format!("Failed to search DigiKey: {:?}", search_response.status()).into());
     }
+    println!("debug 2");
 
     let myresponse = search_response.json::<DigiKeySearchResult>().await?;
+    println!("debug 3");
 
     let mut possible_products: Vec<Product> = Vec::new();
     for product in myresponse.products {
@@ -171,27 +223,31 @@ pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &st
     if possible_products.len() > 1 {
         // handle multiple products with the same manufacturer part number
     }
+
+    // choose the right product variation, by selecting the variation with the lowest price and enough availability
+    let mut best_product = if possible_products.len() > 0 {
+        possible_products[0].clone()
+    } else {
+        return Ok(None);
+    };
+    let variation = match best_product
+    .product_variations
+    .iter()
+    .filter(|v| v.quantity_availablefor_package_type >= quantity && v.minimum_order_quantity <= quantity)
+    .min() {
+        Some(v) => v,
+        None => {
+            return Ok(None);
+        }
+    };
     
     let product = DigiKeyPart {
         manufacturer: possible_products[0].manufacturer.name.clone(),
         manufacturer_pn: possible_products[0].manufacturer_product_number.clone(),
         description: possible_products[0].description.product_description.clone(),
-        digikey_pn: possible_products[0].product_variations[0].digi_key_product_number.clone(),
+        digikey_pn: variation.digi_key_product_number.clone(),
         product_url: possible_products[0].product_url.clone(),
-        unit_price: match possible_products[0].product_variations[0].clone().standard_pricing {
-            Some(price_breaks) => {
-                let mut unit_price = 0.0;
-                for price in price_breaks {
-                    if quantity >= price.break_quantity {
-                        unit_price = price.unit_price
-                    }
-                }
-                unit_price
-            },
-            None => {
-                return Ok(None);
-            }
-        },
+        unit_price: variation.get_price(quantity).unwrap_or(0.0),
         availability: possible_products[0].quantity_available,
     };
     Ok(Some(product))
