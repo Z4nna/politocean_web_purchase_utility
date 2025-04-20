@@ -1,14 +1,14 @@
 use askama::Template;
 use crate::{
-    data::{errors, order, item}, models::{app::AppState, templates::EditOrderTemplate}
+    data::{errors, item, order}, models::{app::{self, AppState}, templates::{EditOrderTemplate, NewOrderTemplate}}
 };
 use axum::{
-    body::Body, extract::{Path, State}, http::{header, HeaderValue, StatusCode}, response::{Html, IntoResponse, Redirect, Response}
+    body::Body, extract::{Path, State}, http::{header, HeaderValue, StatusCode}, response::{Html, IntoResponse, Redirect, Response}, Form
 };
 use tower_sessions::Session;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use zip::write::FileOptions;
-use std::io::Write;
+use std::{collections::{HashMap, HashSet}, io::Write};
 use std::io::Cursor;
 
 pub async fn edit_order_handler(
@@ -23,38 +23,104 @@ pub async fn edit_order_handler(
     Ok(Html(html_string).into_response())
 }
 
+pub async fn new_order_with_id_handler(
+    State(app_state): State<AppState>,
+    session: Session,
+    Form(user_form): Form<HashMap<String, String>>,
+    order_id: i32,
+) -> Result<Response, errors::AppError> {
+    let order_author_id = session
+    .get::<i32>("authenticated_user_id")
+    .await
+    .map_err(|e| errors::AppError::Session(e))?.unwrap();
+    let description = user_form.get("description").unwrap().to_string();
+    let area_division = user_form.get("area_division").unwrap().to_string();
+    let area_sub_area = user_form.get("area_sub_area").unwrap().to_string();
+    order::create_order_with_id(
+        &app_state.connection_pool, 
+        order_id, 
+        order_author_id, 
+        description, 
+        area_division, 
+        area_sub_area).await?;
+
+    let mut indices: HashSet<i32> = HashSet::new();
+    // Collect valid indices based on existing keys
+    for key in user_form.keys().map(|s| s.to_string()) {
+        let maybe_index = key.strip_prefix("items_manifacturer_pn_");
+        match maybe_index {
+            Some(index_str) => {
+                let index = index_str.parse::<i32>().unwrap();
+                indices.insert(index);
+            }
+            None => {
+                continue;
+            }
+        }
+    }
+    // Now process only the indices that exist
+    for index in indices {
+        let man_key = format!("items_manifacturer_{}", index);
+        let pn_key = format!("items_manifacturer_pn_{}", index);
+        let quantity_key = format!("items_quantity_{}", index);
+        let proposal_key = format!("items_proposal_{}", index);
+        let project_key = format!("items_project_{}", index);
+
+        let manifacturer = user_form.get(&man_key).unwrap_or(&"".to_string()).to_string();
+        let manifacturer_pn = user_form.get(&pn_key).unwrap_or(&"".to_string()).to_string();
+        let proposal = user_form.get(&proposal_key).unwrap_or(&"Elettronica generale".to_string()).to_string();
+        let project = user_form.get(&project_key).unwrap_or(&"Varie per lab".to_string()).to_string();
+        let quantity = user_form
+            .get(&quantity_key)
+            .unwrap()
+            .to_string()
+            .parse::<i32>()
+            .unwrap_or(1);
+        order::add_item_to_order(
+            &app_state.connection_pool,
+            order_id,
+            manifacturer,
+            manifacturer_pn,
+            quantity,
+            proposal,
+            project,
+        )
+        .await?;
+    }
+
+    Ok(Redirect::to("/home").into_response())
+}
+
 pub async fn submit_order_handler(
     State(app_state): State<AppState>,
     session: Session,
     Path(order_id): Path<i32>,
+    Form(form): Form<HashMap<String, String>>,
 ) -> Result<Response, errors::AppError>{
-    //order::update_order(&app_state.connection_pool, order_id).await?;
-    Ok(Redirect::to("/home").into_response())
+    // delete old order
+    order::delete_order(&app_state.connection_pool, order_id).await?;
+    println!("Deleted order {}", order_id);
+    // forward request to new order
+    let response = new_order_with_id_handler(State(app_state), session, Form(form), order_id).await;
+    match response {
+        Ok(_) => {
+            Ok(Redirect::to(&format!("/orders/{}/edit", order_id)).into_response())
+        },
+        Err(e) => Err(e)
+    }
 }
 
-pub async fn mark_order_ready_handler(
-    State(app_state): State<AppState>,
-    _session: Session,
-    Path(order_id): Path<i32>
-) -> Result<Response, errors::AppError>{
+pub async fn mark_order_ready_handler(State(app_state): State<AppState>, _session: Session, Path(order_id): Path<i32>) -> Result<Response, errors::AppError>{
     order::mark_order_ready(&app_state.connection_pool, order_id).await?;
     Ok(Redirect::to("/home").into_response())
 }
 
-pub async fn mark_order_unready_handler(
-    State(app_state): State<AppState>,
-    _session: Session,
-    Path(order_id): Path<i32>,
-) -> Result<Response, errors::AppError>{
+pub async fn mark_order_unready_handler(State(app_state): State<AppState>,_session: Session,Path(order_id): Path<i32>,) -> Result<Response, errors::AppError>{
     order::mark_order_unready(&app_state.connection_pool, order_id).await?;
     Ok(Redirect::to("/home").into_response())
 }
 
-pub async fn mark_order_confirmed_handler(
-    State(app_state): State<AppState>,
-    session: Session,
-    Path(order_id): Path<i32>,
-) -> Result<Response, errors::AppError>{
+pub async fn mark_order_confirmed_handler(State(app_state): State<AppState>,session: Session,Path(order_id): Path<i32>,) -> Result<Response, errors::AppError>{
     // check user is logged in
     let user_id = session.get::<i32>("authenticated_user_id")
     .await
@@ -72,11 +138,7 @@ pub async fn mark_order_confirmed_handler(
     }
 }
 
-pub async fn mark_order_unconfirmed_handler(
-    State(app_state): State<AppState>,
-    session: Session,
-    Path(order_id): Path<i32>,
-) -> Result<Response, errors::AppError>{
+pub async fn mark_order_unconfirmed_handler(State(app_state): State<AppState>,session: Session,Path(order_id): Path<i32>,) -> Result<Response, errors::AppError>{
     // check user is logged in
     let user_id = session.get::<i32>("authenticated_user_id")
     .await
@@ -108,8 +170,6 @@ pub async fn download_bom_handler(
     _session: Session,
     Path(order_id): Path<i32>,
 ) -> Result<Response<Body>, errors::AppError> {
-    order::generate_bom(&app_state.connection_pool, order_id).await?;
-
     let bom_result = sqlx::query!(
         "SELECT bom_file_mouser, bom_file_digikey, filename FROM order_bom WHERE order_id = $1",
         order_id
@@ -184,4 +244,15 @@ pub async fn download_bom_handler(
             "No BOM found for order".to_string(),
         )))
     }
+}
+
+pub async fn delete_order_handler(
+    State(app_state): State<AppState>,
+    _session: Session,
+    Path(order_id): Path<i32>,
+) -> Result<Response, errors::AppError>{
+    println!("Handler called {}", order_id);
+    order::delete_order(&app_state.connection_pool, order_id).await?;
+    println!("Deleted order {}", order_id);
+    Ok(Redirect::to("/home").into_response())
 }

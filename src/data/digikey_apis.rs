@@ -1,5 +1,4 @@
 use core::f64;
-use std::os::unix::process;
 
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -169,10 +168,10 @@ async fn digikey_get_token() -> Result<String, Box<dyn std::error::Error>> {
 pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &str, quantity: u32,) -> Result<Option<DigiKeyPart>, Box<dyn std::error::Error>> {
     dotenv().ok();
     let client_id = std::env::var("DIGIKEY_CLIENT_ID").expect("DIGIKEY_CLIENT_ID not set");
+    println!("Searching for {} {}", query_manufacturer, query_manufacturer_pn);
     // future addition: check if old token is still valid, and in this case use the old one
     let token = digikey_get_token().await?;
-    
-    println!("debug 0");
+    println!("Got token.");
     let client = Client::new();
     // Step 2: Perform product search
     let url = format!("https://api.digikey.com/products/v4/search/keyword");
@@ -203,15 +202,15 @@ pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &st
         .json(&request_body)
         .send()
         .await?;
-    println!("debug 1");
+    println!("Sent search request");
 
     if !search_response.status().is_success() {
         return Err(format!("Failed to search DigiKey: {:?}", search_response.status()).into());
     }
-    println!("debug 2");
+    println!("Search successful");
 
     let myresponse = search_response.json::<DigiKeySearchResult>().await?;
-    println!("debug 3");
+    println!("Response parsed");
 
     let mut possible_products: Vec<Product> = Vec::new();
     for product in myresponse.products {
@@ -225,7 +224,7 @@ pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &st
     }
 
     // choose the right product variation, by selecting the variation with the lowest price and enough availability
-    let mut best_product = if possible_products.len() > 0 {
+    let best_product = if possible_products.len() > 0 {
         possible_products[0].clone()
     } else {
         return Ok(None);

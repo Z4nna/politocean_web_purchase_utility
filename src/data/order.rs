@@ -29,9 +29,9 @@ impl Order {
         if self.confirmed {
             "All done! ✅"
         } else if self.ready {
-            "Waiting for approvment ..."
+            "Waiting for approval ..."
         } else {
-            "Not completed yet"
+            "To be completed ..."
         }
     }
     pub fn get_bg_color(&self) -> &str {
@@ -146,6 +146,39 @@ pub async fn create_order(
     Ok(order_id)
 }
 
+pub async fn create_order_with_id(
+    pool: &PgPool,
+    order_id: i32,
+    author_id: i32,
+    description: String,
+    area_division: String,
+    area_sub_area: String,
+) -> Result<(), DataError> {
+    sqlx::query!(
+        "INSERT INTO orders (id, author_id, description, area_division, area_sub_area) VALUES ($1, $2, $3, $4, $5)",
+        order_id,
+        author_id,
+        description,
+        area_division,
+        area_sub_area
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| DataError::Query(e))?;
+    Ok(())
+}
+
+pub async fn delete_order(pool: &PgPool, order_id: i32) -> Result<(), DataError> {
+    sqlx::query!(
+        r#"DELETE FROM orders WHERE id = $1"#,
+        order_id
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| DataError::Query(e))?;
+    Ok(())
+}
+
 pub async fn add_item_to_order(
     pool: &PgPool,
     order_id: i32,
@@ -171,6 +204,7 @@ pub async fn add_item_to_order(
 }
 
 pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError> {
+    println!("Generating BOM for order {}", order_id);
     // get order info
     let order = get_order_from_id(order_id, pool).await?;
     let order_items = item::get_items_from_order(order_id, pool).await?;
@@ -181,21 +215,25 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
 
     // for each item, retrieve info from mouser / digikey
     for item in order_items {
+        println!("Searching for item: {}", item.manifacturer_pn);
         let mouser_part_opt: Option<mouser_apis::MouserPart> = mouser_apis::search_mouser(
             &item.manifacturer,
             &item.manifacturer_pn, 
             item.quantity as u32)
             .await
             .map_err(|e| DataError::FailedQuery(e.to_string()))?;
+        println!("Found {} mouser parts", mouser_part_opt.is_some() as i32);
         let digikey_part_opt = digikey_apis::digikey_search(&item.manifacturer, 
             &item.manifacturer_pn, 
             item.quantity as u32)
             .await
             .map_err(|e| DataError::FailedQuery(e.to_string()))?;
+        println!("Found {} digikey parts", digikey_part_opt.is_some() as i32);
+
         match (mouser_part_opt, digikey_part_opt) {
             (Some(mouser_part), Some(digikey_part)) => {
-                // check if item is available on both mouser and digikey
                 println!("id: {}, mouser_price: {}, digikey_price: {}", item.manifacturer_pn, mouser_part.unit_price, digikey_part.unit_price);
+                // check if item is available on both mouser and digikey
                 if (mouser_part.availability >= item.quantity as u32)
                 && mouser_part.unit_price > 0.0
                 && (mouser_part.unit_price < digikey_part.unit_price || digikey_part.unit_price == 0.0)  {
@@ -238,6 +276,7 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
                 }
             },
             (None, Some(digikey_part)) => { // only available on digikey
+                println!("id: {}, digikey_price: {}", item.manifacturer_pn, digikey_part.unit_price);
                 excel::add_item_to_bom(
                     &mut digikey_book, 
                     digikey_part.manufacturer, 
@@ -251,6 +290,7 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
                     "".to_string()).map_err(|e| DataError::FailedQuery(e.to_string()))?;
             }
             (Some(mouser_part), None) => { // only available on mouser
+                println!("id: {}, mouser_price: {}", item.manifacturer_pn, mouser_part.unit_price);
                 excel::add_item_to_bom(
                     &mut mouser_book,
                     mouser_part.manufacturer,
@@ -264,6 +304,7 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
                     "".to_string()).map_err(|e| DataError::FailedQuery(e.to_string()))?;
             }
             (None, None) => { // part not found
+                println!("id: {}, not found", item.manifacturer_pn);
                 excel::add_item_to_bom(
                     &mut mouser_book,
                     item.manifacturer,

@@ -34,5 +34,6 @@ fn orders_routes() -> Router<app::AppState> {
         .route("/orders/:id/unready", post(edit_order::mark_order_unready_handler))
         .route("/orders/:id/confirm", post(edit_order::mark_order_confirmed_handler))
         .route("/orders/:id/unconfirm", post(edit_order::mark_order_unconfirmed_handler))
+        .route("/orders/:id/delete", post(edit_order::delete_order_handler))
         .route_layer(middleware::from_fn(middlewares::auth::required_authentication))
 }
