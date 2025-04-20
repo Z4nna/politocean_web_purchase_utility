@@ -1,60 +1,145 @@
-/* static/css/global.css */
+/* --- Color Palette --- */
+:root {
+    --primary-color: #0077b6;      /* deep ocean blue */
+    --secondary-color: #00b4d8;    /* lighter cyan */
+    --accent-color: #90e0ef;       /* soft turquoise */
+    --background-color: #f0faff;   /* very light blue */
+    --text-color: #0a0a0a;
+    --muted-text: #4a4a4a;
+    --border-color: #d0eaff;
+    --danger-color: #ff6b6b;
+}
 
-/* Reset some default styles */
+/* --- Global Resets --- */
 * {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
 }
 
-/* Set a consistent font and base styles */
-html, body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f7fa;
-    color: #333;
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
     line-height: 1.6;
+    padding: 2rem;
 }
 
-/* Basic link styling */
-a {
-    color: #4facfe;
-    text-decoration: none;
-    transition: color 0.2s ease;
+/* --- Typography --- */
+h1, h2, h3 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
 }
 
-a:hover {
-    color: #00c6ff;
+p {
+    margin-bottom: 1rem;
+    color: var(--muted-text);
 }
 
-/* Default button style */
-button {
-    font-family: inherit;
+/* --- Forms --- */
+form {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 119, 182, 0.1);
+    margin-bottom: 2rem;
+}
+
+label {
+    font-weight: 600;
+    margin-top: 1rem;
+    display: block;
+    color: var(--text-color);
+}
+
+input[type="text"],
+input[type="number"],
+input[type="email"],
+select,
+textarea {
+    width: 100%;
+    padding: 0.6rem;
+    margin-top: 0.3rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+/* --- Buttons --- */
+button,
+.button {
+    display: inline-block;
+    padding: 0.6rem 1.2rem;
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
     cursor: pointer;
+    margin-top: 1rem;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
 }
 
-/* Make images responsive */
-img {
-    max-width: 100%;
-    height: auto;
+button:hover,
+.button:hover {
+    background-color: var(--secondary-color);
 }
 
-/* Utility classes */
+/* Danger / Delete Buttons */
+button.remove-button {
+    background-color: var(--danger-color);
+    padding: 0.3rem 0.8rem;
+    font-size: 1.1rem;
+    margin-left: 1rem;
+    border-radius: 50%;
+}
+
+/* --- Utility Classes --- */
+.flex {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.space-between {
+    justify-content: space-between;
+}
+
 .text-center {
     text-align: center;
 }
 
-.mt-1 { margin-top: 0.5rem; }
-.mt-2 { margin-top: 1rem; }
-.mt-3 { margin-top: 1.5rem; }
+.mt-1 { margin-top: 1rem; }
+.mt-2 { margin-top: 2rem; }
 
-.mb-1 { margin-bottom: 0.5rem; }
-.mb-2 { margin-bottom: 1rem; }
-.mb-3 { margin-bottom: 1.5rem; }
+.mb-1 { margin-bottom: 1rem; }
+.mb-2 { margin-bottom: 2rem; }
 
-.p-1 { padding: 0.5rem; }
-.p-2 { padding: 1rem; }
-.p-3 { padding: 1.5rem; }
+/* --- Cards / Containers --- */
+.card {
+    background-color: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 119, 182, 0.1);
+    margin-bottom: 1rem;
+}
 
-.rounded {
-    border-radius: 8px;
+hr {
+    border: none;
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 2rem 0;
 }

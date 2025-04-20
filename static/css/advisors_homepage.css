@@ -13,57 +13,24 @@ h1 {
     color: #2c3e50;
 }
 
-form {
-    max-width: 1000px;
-    margin: 0 auto;
-    background: #ffffff;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-}
-
-label {
-    display: inline-block;
-    width: 100px;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-}
-
-input[type="text"],
-input[type="number"] {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 1rem;
-    margin: 0.25rem 0 1rem;
-    width: 200px;
-}
-
-input[type="number"] {
-    width: 80px;
-    text-align: center;
-}
-
-hr {
-    border: none;
-    border-top: 1px solid #ddd;
-    margin: 1.5rem 0;
-}
-
 table {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 2rem;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
 }
 
 thead {
-    background-color: #3498db;
+    background-color: #0077b6; /* ocean blue */
     color: white;
 }
 
 th, td {
     padding: 0.75rem 1rem;
-    text-align: left;
+    text-align: center;
     border-bottom: 1px solid #ddd;
     border-right: 1px solid #e0e0e0;
 }
@@ -74,20 +41,60 @@ td:last-child {
 }
 
 tbody > tr:hover {
-    background-color: lightblue;
+    background-color: #d6f1ff; /* soft water blue */
 }
 
-button[type="submit"] {
-    background-color: #3498db;
+.status-cell {
+    font-weight: bold;
     color: white;
-    padding: 0.75rem 1.25rem;
+    border-radius: 6px;
+}
+
+.actions-cell {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+form.inline-form {
+    display: inline;
+    margin: 0;
+    padding: 0;
     border: none;
-    border-radius: 8px;
-    font-size: 1rem;
+    background: none;
+}
+
+.inline-form button {
+    all: unset;
+    font-family: inherit;
+    background-color: #4CAF50;
+    color: white;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    border-radius: 4px;
     cursor: pointer;
-    display: block;
-    margin: 0 auto;
+    display: inline-block;
+    line-height: 1.5;
+    text-align: center;
     transition: background-color 0.3s ease;
+}
+
+.inline-form button:hover {
+    background-color: steelblue;
+    color: white;
+}
+
+.inline-form .remove-button {
+    background-color: #e74c3c;
+}
+
+.inline-form .remove-button:hover {
+    background-color: #c0392b;
+}
+
+.button, .inline-form button {
+    min-height: 38px;
 }
 
 .button {
@@ -101,6 +108,7 @@ button[type="submit"] {
     font-size: 0.9rem;
     border-radius: 4px;
     cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
 .button:hover {
@@ -108,19 +116,15 @@ button[type="submit"] {
     color: white;
 }
 
-form.inline-form {
-    display: inline;
-    margin: 0;
-    padding: 0;
-    border: none;
-    background: none;
+.remove-button {
+    background-color: #e74c3c;
 }
 
-.actions-container {
-    display: flex;
-
+.remove-button:hover {
+    background-color: #c0392b;
 }
 
-.action {
-    margin-right: 10px;
+.new-order-button {
+    text-align: center;
+    margin-top: 2rem;
 }

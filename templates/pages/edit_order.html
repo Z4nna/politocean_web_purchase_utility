@@ -7,21 +7,27 @@
     <script src="/static/js/edit_order.js"></script>
 </head>
 <body>
-    <h1>Dettagli Ordine #{{ order.id }}</h1>
+    <h1 class="page-title">Dettagli Ordine #{{ order.id }}</h1>
 
-    <form action="/orders/{{ order.id }}/edit/submit" method="post">
-        <label for="description">Descrizione:</label>
-        <input type="text" id="description" name="description" value="{{ order.description }}"required><br><br>
+    <form action="/orders/{{ order.id }}/edit/submit" method="post" class="order-form">
+        <div class="form-row">
+            <label for="description">Descrizione:</label>
+            <input type="text" id="description" name="description" value="{{ order.description }}" required>
+        </div>
 
-        <p><strong>Data:</strong> {{ order.get_date() }}</p>
+        <p class="order-info"><strong>Data:</strong> {{ order.get_date() }}</p>
 
-        <label for="area_division">Divisione:</label>
-        <input type="text" id="area_division" name="area_division" value="{{ order.area_division }}"><br><br>
+        <div class="form-row">
+            <label for="area_division">Divisione:</label>
+            <input type="text" id="area_division" name="area_division" value="{{ order.area_division }}">
+        </div>
 
-        <label for="area_sub_area">Sub-area:</label>
-        <input type="text" id="area_sub_area" name="area_sub_area" value="{{ order.area_sub_area }}"><br><br>
+        <div class="form-row">
+            <label for="area_sub_area">Sub-area:</label>
+            <input type="text" id="area_sub_area" name="area_sub_area" value="{{ order.area_sub_area }}">
+        </div>
 
-        <p><strong>Stato:</strong>
+        <p class="order-info"><strong>Stato:</strong>
             {% if order.confirmed %}
                 Confermato
             {% else if order.ready %}
@@ -31,7 +37,7 @@
             {% endif %}
         </p>
 
-        <h3>Articoli</h3>
+        <h3 class="section-title">Articoli</h3>
         <div id="items-container"></div>
 
         <script>
@@ -46,16 +52,23 @@
             {% endfor %}
         </script>
 
-        <button type="button" class="add-button" onclick="addItemEntry()">+ Aggiungi Articolo</button><br><br>
+        <button type="button" class="button add-button" onclick="addItemEntry()">➕ Aggiungi Articolo</button><br><br>
 
-        <button type="submit">Aggiorna ordine</button>
+        <button type="submit" class="button submit-button">✅ Aggiorna Ordine</button>
     </form>
-
-    <h2>Actions</h2>
     <hr>
-    <a href="/home" class="button">Torna alla Home</a>
-    <form action="/orders/{{ order.id }}/edit/generate-bom" method="post"><button type="submit" class="button">Generate BOM</button></form>
-    <form action="/orders/{{ order.id }}/edit/download-bom" method="post"><button type="submit" class="button">Download BOM</button></form>
+    <h2 class="section-title">Azioni</h2>
 
+    <div class="actions">
+        <form action="/home" method="get" class="inline-form">
+            <button type="submit" >🏠 Torna alla Home</button>
+        </form>
+        <form action="/orders/{{ order.id }}/edit/generate-bom" method="post" class="inline-form">
+            <button type="submit">📄 Generate BOM</button>
+        </form>
+        <form action="/orders/{{ order.id }}/edit/download-bom" method="post" class="inline-form">
+            <button type="submit">⬇️ Download BOM</button>
+        </form>
+    </div>
 </body>
 </html>
