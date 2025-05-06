@@ -109,6 +109,10 @@ h3 {
     background-color: #e60000;
 }
 
+.header-row {
+    font-weight: bold;
+}
+
 /* Responsive Styles */
 @media (max-width: 768px) {
     form {
