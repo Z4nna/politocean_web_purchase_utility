@@ -4,4 +4,6 @@ This tools automates the purchase of PoliTOcean products from Mouser and Digikey
 It allows advisors to create, delete and edit orders, allowing them to set Manufacturer Name, Manufacturer Part Number, Quantity,
 Proposal and Project fields for each item they want to buy. After this, the tool will automatically look up the products in Mouser and Digikey websites and create an order with the products that are in stock (selecting the cheapest one, when possible). It then creates an excel file with the order details, prices, description and product links automaticatically generated.
 ## How to use
-Just run cargo run, access the website on "http://yourip:3000"
+1. Setup your database connection and APIs, setting up the .env file.
+2. Run SQLx migrations.
+3. Just cargo run, access the website on "http://yourip:3000"
