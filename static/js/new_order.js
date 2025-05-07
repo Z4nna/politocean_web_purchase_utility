@@ -12,7 +12,7 @@ function addItemEntry() {
         <input type="text" name="items_manifacturer_${itemIndex}" required />
         <input type="text" name="items_manifacturer_pn_${itemIndex}" required />
         <input type="number" name="items_quantity_${itemIndex}" value = "1" required />
-        <button type="button" class="remove-button" onclick="removeItemEntry(this)">×</button>
+        <button type="button" class="delete-button" onclick="removeItemEntry(this)">×</button>
     `;
     container.appendChild(div);
     itemIndex++;

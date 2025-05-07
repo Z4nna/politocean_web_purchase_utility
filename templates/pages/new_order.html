@@ -6,33 +6,41 @@
     <link rel="stylesheet" href="/static/css/new_order.css" />
 </head>
 <body>
-    <h1>Crea un Nuovo Ordine</h1>
-    <form action="/orders/new/submit" method="post">
-        <label for="description">Descrizione:</label><br>
-        <input type="text" id="description" name="description" required><br><br>
+    <!-- Replace inside your <body> -->
+<h1 class="page-title">Crea un Nuovo Ordine</h1>
+<form action="/orders/new/submit" method="post" class="order-form">
+    <div class="form-row">
+        <label for="description">Descrizione:</label>
+        <input type="text" id="description" name="description" required>
+    </div>
 
-        <label for="area_division">Divisione:</label><br>
-        <input type="text" id="area_division" name="area_division" required><br><br>
+    <div class="form-row">
+        <label for="area_division">Divisione:</label>
+        <input type="text" id="area_division" name="area_division" required>
+    </div>
 
-        <label for="area_sub_area">Sub-area:</label><br>
-        <input type="text" id="area_sub_area" name="area_sub_area" required><br><br>
+    <div class="form-row">
+        <label for="area_sub_area">Sub-area:</label>
+        <input type="text" id="area_sub_area" name="area_sub_area" required>
+    </div>
 
-        <h3>Articoli</h3>
-        <div id="items-container">
-            <div class="item-entry header-row">
-                <span>Proposal</span>
-                <span>Project</span>
-                <span>Manufacturer</span>
-                <span>P.N.</span>
-                <span>Quantity</span>
-                <span></span> <!-- for the remove button column -->
-            </div>
+    <h3 class="section-title">Articoli</h3>
+    <div id="items-container">
+        <div class="item-entry header-row">
+            <span>Proposal</span>
+            <span>Project</span>
+            <span>Manufacturer</span>
+            <span>P.N.</span>
+            <span>Quantity</span>
+            <span></span> <!-- for the remove button column -->
         </div>
+    </div>
 
-        <button type="button" class="add-button" onclick="addItemEntry()">+ Aggiungi Articolo</button><br><br>
+    <button type="button" class="add-button" onclick="addItemEntry()">+ Aggiungi Articolo</button>
 
-        <button type="submit">Crea Ordine</button>
-    </form>
+    <br><br>
+    <button type="submit">Crea Ordine</button>
+</form>
 
     <script src="/static/js/new_order.js"></script>
 </body>

@@ -1,5 +1,9 @@
 let itemIndex = 0;
 
+function showLoadingContainer() {
+    document.getElementById('loading-container').style.display = 'flex';
+}
+
 function addItemEntry(proposal = "", project = "", manifacturer = "", manifacturerPn = "", quantity = 1) {
     const container = document.getElementById('items-container');
 
@@ -22,3 +26,4 @@ function removeItemEntry(button) {
     const entry = button.parentElement;
     entry.remove();
 }
+

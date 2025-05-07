@@ -8,7 +8,6 @@
 </head>
 <body>
     <h1 class="page-title">Dettagli Ordine #{{ order.id }}</h1>
-
     <form action="/orders/{{ order.id }}/edit/submit" method="post" class="order-form">
         <div class="form-row">
             <label for="description">Descrizione:</label>
@@ -73,11 +72,22 @@
             <button type="submit" >🏠 Torna alla Home</button>
         </form>
         <form action="/orders/{{ order.id }}/edit/generate-bom" method="post" class="inline-form">
-            <button type="submit">📄 Generate BOM</button>
+            <button type="submit" onclick="showLoadingContainer()">📄 Generate BOM</button>
         </form>
         <form action="/orders/{{ order.id }}/edit/download-bom" method="post" class="inline-form">
             <button type="submit">⬇️ Download BOM</button>
         </form>
+    </div>
+    <div id="loading-container">
+        <div class="cup">
+            <span class="steam"></span>
+            <span class="steam"></span>
+            <span class="steam"></span>
+            <div class="cup-handle"></div>
+        </div>
+        <br><br>
+        <p>Generating BOM... this might take a while😓</p>
+        <p>In the meantime, go grab a coffee!</p>
     </div>
 </body>
 </html>

@@ -1,100 +1,121 @@
-/* new_order.css */
-
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f9f9f9;
-    color: #333;
-    margin: 0;
-    padding: 0;
-}
-
-h1 {
-    text-align: center;
-    color: #3b3b3b;
-    margin-top: 20px;
-}
-
-form {
-    width: 60%;
+.order-form {
+    max-width: 70%;
     margin: 0 auto;
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+}
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1.2rem;
 }
 
 label {
-    font-weight: bold;
-    margin-bottom: 5px;
-    margin-left: 10px;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #2c3e50;
 }
 
-input[type="text"], input[type="number"] {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 20px;
+input[type="text"] {
+    padding: 0.5rem 0.75rem;
     border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 14px;
+    border-radius: 6px;
+    font-size: 1rem;
+    background-color: #f9f9ff;
 }
 
-button {
-    background-color: #4CAF50;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+.page-title {
+    text-align: center;
+    font-size: 2rem;
+    color: #2c3e50;
+    margin-bottom: 2rem;
 }
 
-button:hover {
-    background-color: #45a049;
+.section-title {
+    font-size: 1.2rem;
+    color: #2980b9;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    text-align: center;
 }
 
-button:disabled {
-    background-color: #d3d3d3;
-    cursor: not-allowed;
+.order-info {
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    color: #34495e;
 }
 
 .add-button {
-    background-color: #007bff;
-    font-size: 16px;
-    padding: 8px 16px;
-    width: auto;
+    background-color: #27ae60;
+    margin-top: 1rem;
 }
 
-.add-button:hover {
-    background-color: #0056b3;
+.submit-button {
+    background-color: #3498db;
+    margin-top: 1rem;
 }
 
-h3 {
-    margin-top: 30px;
-    color: #444;
+.actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
-/* Container for item inputs */
+.secondary-button {
+    background-color: #2980b9;
+}
+
+.secondary-button:hover {
+    background-color: steelblue;
+}
+
+form.inline-form {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+}
+
 #items-container {
-    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+}
+
+.item-entry,
+.header-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 0.7fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    border-radius: 5px;
 }
 
 .item-entry {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    padding: 10px;
     background-color: #f4f4f4;
-    border-radius: 5px;
     border: 1px solid #ddd;
 }
 
 .item-entry input {
-    width: 45%;
+    margin: auto;
 }
 
-.remove-button {
+.header-row {
+    font-weight: bold;
+    background-color: #e3e3e3;
+    border-bottom: 2px solid #bbb;
+}
+
+.delete-button {
     background-color: #ff4d4d;
     color: white;
     font-size: 14px;
@@ -103,33 +124,18 @@ h3 {
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    margin: auto;
 }
 
-.remove-button:hover {
-    background-color: #e60000;
+.item-entry .delete-button:hover {
+    background-color: #c0392b;
+}
+
+.item-input-fields {
+    overflow-x: auto; /* Enable horizontal scrolling if the content overflows */
+    white-space: nowrap; /* Prevent wrapping of text, keeping it in a single line */
 }
 
 .header-row {
     font-weight: bold;
-}
-
-/* Responsive Styles */
-@media (max-width: 768px) {
-    form {
-        width: 90%;
-    }
-
-    .item-entry {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .item-entry input {
-        width: 100%;
-    }
-
-    .remove-button {
-        margin-top: 10px;
-        width: 100%;
-    }
 }
