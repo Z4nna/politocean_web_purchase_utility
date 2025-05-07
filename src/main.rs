@@ -15,6 +15,10 @@ async fn main() {
 
     let app_state = app::AppState {
         connection_pool: pool,
+        current_user: app::CurrentUser {
+            is_authenticated: false,
+            user_id: None,
+        }
     };
 
     println!("Server running on {addr:?}");

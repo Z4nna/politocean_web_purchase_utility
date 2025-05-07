@@ -7,3 +7,17 @@ Proposal and Project fields for each item they want to buy. After this, the tool
 1. Setup your database connection and APIs, setting up the .env file.
 2. Run SQLx migrations.
 3. Just cargo run, access the website on "http://yourip:3000"
+### .env file setup
+The .env file should be located in the root directory of the project. It should contain the following variables:
+```
+DATABASE_URL=postgres://yourid:yourpwd@yourdbip/yourdbname
+MOUSER_API_KEY=yourmouserapikey
+DIGIKEY_CLIENT_ID=yourdigikeyclientid
+DIGIKEY_CLIENT_SECRET=yourdigikeyclientsecret
+```
+### SQLx migrations
+The SQLx migrations are located in the migrations folder.
+To run the migrations, run the following command:
+```
+DATABASE_URL=yourdatabaseurl sqlx migrate run
+```

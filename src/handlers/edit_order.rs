@@ -1,6 +1,6 @@
 use askama::Template;
 use crate::{
-    data::{errors, item, order}, models::{app::{self, AppState}, templates::{EditOrderTemplate, NewOrderTemplate}}
+    data::{errors, item, order}, models::{app::AppState, templates::EditOrderTemplate}
 };
 use axum::{
     body::Body, extract::{Path, State}, http::{header, HeaderValue, StatusCode}, response::{Html, IntoResponse, Redirect, Response}, Form
