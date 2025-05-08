@@ -1,5 +1,5 @@
 use std::collections::{HashSet, HashMap};
-use crate::{data::{excel, user}, models::templates::NewOrderTemplate};
+use crate::{data::excel, models::templates::NewOrderTemplate};
 use askama::Template;
 use crate::{
     models::app::AppState,

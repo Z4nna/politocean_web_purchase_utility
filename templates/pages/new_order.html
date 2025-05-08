@@ -43,7 +43,12 @@
     </form>
     <hr>
 
-    <p>In alternativa, carica la BOM di KiCAD</p>
+    <h2 class="section-title">In alternativa, carica la BOM di KiCAD:</h2>
+    <p>La prima colonna dell'excel deve essere la quantità (quantità < 1 verranno ignorate), 
+        la seconda colonna il nome del produttore (nomi nulli verranno ignorati),
+        la terza colonna il part number del prodotto (P.N. nulli verranno ignorati).
+        La prima riga è considerata la riga di intestazione.
+    </p>
     <form action="/orders/new/upload-kicad-bom" method="post" enctype="multipart/form-data" class="order-form">
         <div class="form-row">
             <label for="description">Descrizione:</label>

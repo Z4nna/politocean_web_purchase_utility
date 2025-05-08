@@ -1,8 +1,6 @@
 use umya_spreadsheet::{writer, reader, Spreadsheet};
 use std::io::Cursor;
 
-use super::item;
-
 #[derive(Debug, Clone)]
 pub struct KiCadItem {
     pub quantity: i32,
