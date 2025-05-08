@@ -4,11 +4,13 @@ use sqlx::PgPool;
 #[derive(sqlx::FromRow, Debug, Clone)]
 pub struct OrderItem {
     pub order_id: i32,
-    pub manifacturer: String,
-    pub manifacturer_pn: String,
+    pub manufacturer: String,
+    pub manufacturer_pn: String,
     pub quantity: i32,
     pub proposal: String,
-    pub project: String
+    pub project: String,
+    pub mouser_pn: Option<String>,
+    pub digikey_pn: Option<String>,
 }
 
 pub async fn get_items_from_order(order_id: i32, pool: &PgPool) -> Result<Vec<OrderItem>, DataError> {
@@ -21,4 +23,19 @@ pub async fn get_items_from_order(order_id: i32, pool: &PgPool) -> Result<Vec<Or
     .await
     .map_err(|e| DataError::Query(e))?;
     Ok(user_orders)
+}
+
+pub async fn set_item_pn(pool: &PgPool, order_id: i32, manufacturer: String, manufacturer_pn: String, mouser_pn: Option<String>, digikey_pn: Option<String>) -> Result<(), DataError> {
+    sqlx::query!(
+        "UPDATE order_items SET mouser_pn = $1, digikey_pn = $2 WHERE order_id = $3 AND manufacturer = $4 AND manufacturer_pn = $5",
+        mouser_pn,
+        digikey_pn,
+        order_id,
+        manufacturer,
+        manufacturer_pn
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| DataError::Query(e))?;
+    Ok(())
 }

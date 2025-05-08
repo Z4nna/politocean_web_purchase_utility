@@ -40,15 +40,17 @@ CREATE TABLE IF NOT EXISTS orders (
 
 CREATE TABLE IF NOT EXISTS order_items (
     order_id INT NOT NULL,
-    manifacturer TEXT NOT NULL,
-    manifacturer_pn TEXT NOT NULL,
+    manufacturer TEXT NOT NULL,
+    manufacturer_pn TEXT NOT NULL,
     quantity INT NOT NULL,
-    PRIMARY KEY (order_id, manifacturer, manifacturer_pn),
+    PRIMARY KEY (order_id, manufacturer, manufacturer_pn),
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE ON UPDATE CASCADE,
     proposal TEXT NOT NULL,
     FOREIGN KEY (proposal) REFERENCES proposals(name) ON UPDATE CASCADE,
     project TEXT NOT NULL,
-    FOREIGN KEY (project) REFERENCES projects(name) ON UPDATE CASCADE
+    FOREIGN KEY (project) REFERENCES projects(name) ON UPDATE CASCADE,
+    mouser_pn TEXT,
+    digikey_pn TEXT
 );
 
 CREATE TABLE IF NOT EXISTS order_bom (

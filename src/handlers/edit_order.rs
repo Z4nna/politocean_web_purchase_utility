@@ -84,6 +84,8 @@ pub async fn new_order_with_id_handler(
             quantity,
             proposal,
             project,
+            None,
+            None,
         )
         .await?;
     }
