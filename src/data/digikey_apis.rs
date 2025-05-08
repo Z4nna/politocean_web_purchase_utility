@@ -1,9 +1,11 @@
 use core::f64;
-
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::cmp::Ordering;
+use std::{cmp::Ordering, fs::File, io::Write};
 use dotenvy::dotenv;
+
+
+use serde_path_to_error::deserialize;
 
 #[derive(Debug, Deserialize)]
 struct TokenResponse {
@@ -52,7 +54,7 @@ pub struct Product {
     pub manufacturer: Manufacturer,
     pub manufacturer_product_number: String,
     pub product_url: String,
-    pub datasheet_url: String,
+    pub datasheet_url: Option<String>,
     pub quantity_available: u32,
     pub product_variations: Vec<ProductVariation>,
 }
@@ -168,10 +170,9 @@ async fn digikey_get_token() -> Result<String, Box<dyn std::error::Error>> {
 pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &str, quantity: u32,) -> Result<Option<DigiKeyPart>, Box<dyn std::error::Error>> {
     dotenv().ok();
     let client_id = std::env::var("DIGIKEY_CLIENT_ID").expect("DIGIKEY_CLIENT_ID not set");
-    println!("Searching for {} {}", query_manufacturer, query_manufacturer_pn);
+    println!("Searching for {} {} on Digikey", query_manufacturer, query_manufacturer_pn);
     // future addition: check if old token is still valid, and in this case use the old one
     let token = digikey_get_token().await?;
-    println!("Got token.");
     let client = Client::new();
     // Step 2: Perform product search
     let url = format!("https://api.digikey.com/products/v4/search/keyword");
@@ -181,7 +182,7 @@ pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &st
         limit: 20,
         offset: 0,
         filter_options_request: FilterOptionsRequest {
-            minimum_quantity_available: 0,
+            minimum_quantity_available: quantity,
             market_place_filter: "NoFilter".to_string(),
         },
         sort_options: SortOptions {
@@ -202,14 +203,48 @@ pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &st
         .json(&request_body)
         .send()
         .await?;
-    println!("Sent search request");
+    println!("Sent digikey search request successfully");
 
     if !search_response.status().is_success() {
         return Err(format!("Failed to search DigiKey: {:?}", search_response.status()).into());
     }
     println!("Search successful");
 
-    let myresponse = search_response.json::<DigiKeySearchResult>().await?;
+
+    let bytes = search_response.bytes().await?;
+
+    let json: serde_json::Value = serde_json::from_slice(&bytes)?;
+
+    // Serialize the JSON with pretty formatting
+    let pretty = serde_json::to_string_pretty(&json)?;
+
+    // Write to a file
+    let mut file = File::create("digikey_response_pretty.json")?;
+    file.write_all(pretty.as_bytes())?;
+
+    let myresponse: DigiKeySearchResult;
+    /*
+    match serde_json::from_slice(&bytes) {
+        Ok(response) => {
+            myresponse = response;
+        }
+        Err(e) => {
+            println!("Error parsing JSON: {}", e);
+            return Err(format!("Error parsing JSON: {}", e).into());
+        }
+    }*/
+
+    let mut de = serde_json::Deserializer::from_slice(&bytes);
+    match deserialize::<_, DigiKeySearchResult>(&mut de) {
+        Ok(result) => {
+            myresponse = result;
+        },
+        Err(e) => {
+            eprintln!("❌ Path error: {}", e);
+            return Err(format!("Error parsing JSON: {}", e).into());
+        }
+    };
+    //let myresponse = search_response.json::<DigiKeySearchResult>().await?;
     println!("Response parsed");
 
     let mut possible_products: Vec<Product> = Vec::new();

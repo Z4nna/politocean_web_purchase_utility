@@ -1,12 +1,12 @@
 use std::collections::{HashSet, HashMap};
-use crate::models::templates::NewOrderTemplate;
+use crate::{data::{excel, user}, models::templates::NewOrderTemplate};
 use askama::Template;
 use crate::{
     models::app::AppState,
     data::{errors, order},
 };
 use axum::{
-    extract::{Form, State}, response::{Html, IntoResponse, Redirect, Response}
+    body::Bytes, extract::{Form, Multipart, State}, response::{Html, IntoResponse, Redirect, Response}
 };
 use tower_sessions::Session;
 
@@ -74,4 +74,39 @@ pub async fn submit_order_handler(
     }
 
     Ok(Redirect::to("/home").into_response())
+}
+
+pub async fn upload_kicad_bom_handler(
+    State(app_state): State<AppState>,
+    session: Session,
+    mut multipart: Multipart
+) -> Result<Response, errors::AppError> {
+    println!("Uploading file...");
+    let mut fields: HashMap<String, String> = HashMap::new();
+    let mut file_bytes: Option<Bytes> = None;
+
+    while let Some(field) = multipart.next_field().await.unwrap() {
+        let name = field.name().unwrap().to_string();
+
+        if name == "file" {
+            file_bytes = Some(field.bytes().await.unwrap());
+        } else {
+            // Normal text field
+            let text = field.text().await.unwrap();
+            fields.insert(name, text);
+        }
+    }
+    let spreadsheet = excel::load_from_bytes(&file_bytes.unwrap()).map_err(|e| errors::DataError::Internal(e))?;
+    println!("Spreadsheet loaded");
+    order::create_order_from_kicad_bom(
+        &app_state.connection_pool,
+        session.get::<i32>("authenticated_user_id").await.unwrap().unwrap(),
+        fields.get("description").unwrap().to_string(),
+        fields.get("area_division").unwrap().to_string(), 
+        fields.get("area_sub_area").unwrap().to_string(), 
+        fields.get("proposal").unwrap().to_string(), 
+        fields.get("project").unwrap().to_string(), 
+        &spreadsheet
+    ).await?;
+    return Ok(Redirect::to("/home").into_response());
 }

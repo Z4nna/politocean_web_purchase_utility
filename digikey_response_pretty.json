@@ -1,0 +1,369 @@
+{
+  "AppliedParametricFiltersDto": [
+    {
+      "Id": -102,
+      "Priority": 0,
+      "Text": "Quantity Available"
+    }
+  ],
+  "ExactMatches": [],
+  "FilterOptions": {
+    "Manufacturers": [
+      {
+        "Id": 296,
+        "ProductCount": 1,
+        "Value": "Texas Instruments"
+      }
+    ],
+    "MarketPlaceFilters": [
+      "ExcludeMarketPlace",
+      "MarketPlaceOnly"
+    ],
+    "Packaging": null,
+    "ParametricFilters": null,
+    "Series": null,
+    "Status": null,
+    "TopCategories": [
+      {
+        "Category": {
+          "Id": 693,
+          "Name": "Voltage Reference",
+          "ProductCount": 1
+        },
+        "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/002/656/456/TSOT-23-6%2C%20TSOT-6_tmb.jpg",
+        "RootCategory": {
+          "Id": 2025,
+          "Name": "Power Management (PMIC)",
+          "ProductCount": 0
+        },
+        "Score": 0.0
+      }
+    ]
+  },
+  "Products": [
+    {
+      "BackOrderNotAllowed": false,
+      "BaseProductNumber": {
+        "Id": 27326,
+        "Name": "REF1933"
+      },
+      "Category": {
+        "CategoryId": 32,
+        "ChildCategories": [
+          {
+            "CategoryId": 2025,
+            "ChildCategories": [
+              {
+                "CategoryId": 693,
+                "ChildCategories": [],
+                "ImageUrl": "https://www.digikey.it//mm.digikey.com/Volume0/opasdata/d220001/derivates/3/002/656/456/TSOT-23-6%2C%20TSOT-6_tmb.jpg",
+                "Name": "Voltage Reference",
+                "NewProductCount": 0,
+                "ParentId": 2025,
+                "ProductCount": 0,
+                "SeoDescription": "Products in the voltage reference family are used to derive an electrical potential having a stable, well-established value from a source of more uncertain character, for use as a standard of comparison in measurement, control, and similar applications. While their functional behavior may be similar to that of linear voltage regulators used for purposes of bulk power regulation, voltage reference devices are not adapted for use as such; their performance as standards of comparison has a generally inverse relationship with increasing output current capacity or actual current drawn by a load."
+              }
+            ],
+            "ImageUrl": "https://www.digikey.it//mm.digikey.com/Volume0/opasdata/d220001/derivates/3/300/314/540/846%3B-TO220CP-3%3B-%3B-3_tmb.jpg",
+            "Name": "Power Management (PMIC)",
+            "NewProductCount": 0,
+            "ParentId": 32,
+            "ProductCount": 0,
+            "SeoDescription": "PMIC, or Power Management Integrated Circuits, refers to a wide range of application-specific ICs or chips. Included in this category is PMICs for AC/DC Converters, Battery Chargers, Battery Management, Current Regulation, Display Drivers, Energy Metering, Full/Half-Bridge Drivers, Gate Drivers, Hot Swap Controllers, Laser Drivers, LED Drivers, Lighting/Ballast Controllers, Motor Drivers, OR Controllers, Power Factor Correction, Power Distribution Switches, PoE Controllers, Power Supply Controllers, RMS to DC Converters, Supervisors, Thermal Management, V/F and F/V Controllers, various Voltage Regulators, and More."
+          }
+        ],
+        "ImageUrl": "https://www.digikey.it//mm.digikey.com/Volume0/opasdata/d220001/derivates/3/010/153/598/8-SOIC%2CM8_tmb.jpg",
+        "Name": "Integrated Circuits (ICs)",
+        "NewProductCount": 0,
+        "ParentId": 0,
+        "ProductCount": 0,
+        "SeoDescription": "Integrated circuits combine a large number of transistors and other elementary electronic components in miniaturized form into a single physical device, that is designed for a specific purpose or function and characterized by its performance of that function rather than by the behavior of its component pieces. Examples include microcontrollers, battery monitors and charge controllers, analog to digital converters, operational amplifiers, logic gates, voltage regulators, gate drivers, motro controllers, and others."
+      },
+      "Classifications": {
+        "ExportControlClassNumber": "EAR99",
+        "HtsusCode": "8542.39.0060",
+        "MoistureSensitivityLevel": "2  (1 Year)",
+        "ReachStatus": "REACH Unaffected",
+        "RohsStatus": "ROHS3 Compliant"
+      },
+      "DatasheetUrl": "https://www.ti.com/general/docs/suppproductinfo.tsp?distId=10&gotoUrl=https%3A%2F%2Fwww.ti.com%2Flit%2Fgpn%2Fref1925",
+      "DateLastBuyChance": null,
+      "Description": {
+        "DetailedDescription": "Series Voltage Reference IC Fixed 3.3V V ±0.1% 20 mA SOT-23-THIN",
+        "ProductDescription": "IC VREF SERIES 0.1% SOT23-5"
+      },
+      "Discontinued": false,
+      "EndOfLife": false,
+      "Manufacturer": {
+        "Id": 296,
+        "Name": "Texas Instruments"
+      },
+      "ManufacturerLeadWeeks": "18",
+      "ManufacturerProductNumber": "REF1933AIDDCT",
+      "ManufacturerPublicQuantity": 0,
+      "Ncnr": false,
+      "NormallyStocking": true,
+      "OtherNames": [
+        "296-38444-6",
+        "REF1933AIDDCT-ND",
+        "296-38444-2",
+        "296-38444-1"
+      ],
+      "Parameters": [
+        {
+          "ParameterId": 245,
+          "ParameterText": "Reference Type",
+          "ParameterType": "String",
+          "ValueId": "401373",
+          "ValueText": "Series"
+        },
+        {
+          "ParameterId": 41,
+          "ParameterText": "Output Type",
+          "ParameterType": "String",
+          "ValueId": "347431",
+          "ValueText": "Fixed"
+        },
+        {
+          "ParameterId": 1779,
+          "ParameterText": "Voltage - Output (Min/Fixed)",
+          "ParameterType": "String",
+          "ValueId": "174115",
+          "ValueText": "3.3V"
+        },
+        {
+          "ParameterId": 2114,
+          "ParameterText": "Current - Output",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "20 mA",
+          "ValueText": "20 mA"
+        },
+        {
+          "ParameterId": 3,
+          "ParameterText": "Tolerance",
+          "ParameterType": "String",
+          "ValueId": "731",
+          "ValueText": "±0.1%"
+        },
+        {
+          "ParameterId": 17,
+          "ParameterText": "Temperature Coefficient",
+          "ParameterType": "String",
+          "ValueId": "159214",
+          "ValueText": "25ppm/°C"
+        },
+        {
+          "ParameterId": 1781,
+          "ParameterText": "Noise - 0.1Hz to 10Hz",
+          "ParameterType": "String",
+          "ValueId": "87558",
+          "ValueText": "12ppmp-p"
+        },
+        {
+          "ParameterId": 1782,
+          "ParameterText": "Noise - 10Hz to 10kHz",
+          "ParameterType": "String",
+          "ValueId": "1",
+          "ValueText": "-"
+        },
+        {
+          "ParameterId": 127,
+          "ParameterText": "Voltage - Input",
+          "ParameterType": "String",
+          "ValueId": "173509",
+          "ValueText": "3.32V ~ 5.5V"
+        },
+        {
+          "ParameterId": 449,
+          "ParameterText": "Current - Supply",
+          "ParameterType": "String",
+          "ValueId": "222699",
+          "ValueText": "460µA"
+        },
+        {
+          "ParameterId": 252,
+          "ParameterText": "Operating Temperature",
+          "ParameterType": "String",
+          "ValueId": "212479",
+          "ValueText": "-40°C ~ 125°C (TA)"
+        },
+        {
+          "ParameterId": 69,
+          "ParameterText": "Mounting Type",
+          "ParameterType": "String",
+          "ValueId": "409393",
+          "ValueText": "Surface Mount"
+        },
+        {
+          "ParameterId": 16,
+          "ParameterText": "Package / Case",
+          "ParameterType": "String",
+          "ValueId": "405424",
+          "ValueText": "SOT-23-5 Thin, TSOT-23-5"
+        },
+        {
+          "ParameterId": 1291,
+          "ParameterText": "Supplier Device Package",
+          "ParameterType": "String",
+          "ValueId": "503772",
+          "ValueText": "SOT-23-THIN"
+        }
+      ],
+      "PhotoUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/medias/images/6286/296%7E4204403-2%7EDDC%7E5.jpg",
+      "PrimaryVideoUrl": null,
+      "ProductStatus": {
+        "Id": 0,
+        "Status": "Active"
+      },
+      "ProductUrl": "https://www.digikey.com/en/products/detail/texas-instruments/REF1933AIDDCT/5014149",
+      "ProductVariations": [
+        {
+          "DigiKeyProductNumber": "296-38444-2-ND",
+          "DigiReelFee": 0.0,
+          "MarketPlace": false,
+          "MaxQuantityForDistribution": 999999999,
+          "MinimumOrderQuantity": 250,
+          "MyPricing": [],
+          "PackageType": {
+            "Id": 1,
+            "Name": "Tape & Reel (TR)"
+          },
+          "QuantityAvailableforPackageType": 1000,
+          "StandardPackage": 250,
+          "StandardPricing": [
+            {
+              "BreakQuantity": 250,
+              "TotalPrice": 418.7,
+              "UnitPrice": 1.6748
+            },
+            {
+              "BreakQuantity": 500,
+              "TotalPrice": 809.26,
+              "UnitPrice": 1.61852
+            },
+            {
+              "BreakQuantity": 750,
+              "TotalPrice": 1192.7475,
+              "UnitPrice": 1.59033
+            },
+            {
+              "BreakQuantity": 1250,
+              "TotalPrice": 1948.8625,
+              "UnitPrice": 1.55909
+            },
+            {
+              "BreakQuantity": 1750,
+              "TotalPrice": 2696.4525,
+              "UnitPrice": 1.54083
+            },
+            {
+              "BreakQuantity": 2500,
+              "TotalPrice": 3808.175,
+              "UnitPrice": 1.52327
+            }
+          ],
+          "Supplier": {
+            "Id": 296,
+            "Name": "Texas Instruments"
+          },
+          "TariffActive": false
+        },
+        {
+          "DigiKeyProductNumber": "296-38444-1-ND",
+          "DigiReelFee": 0.0,
+          "MarketPlace": false,
+          "MaxQuantityForDistribution": 999999999,
+          "MinimumOrderQuantity": 1,
+          "MyPricing": [],
+          "PackageType": {
+            "Id": 2,
+            "Name": "Cut Tape (CT)"
+          },
+          "QuantityAvailableforPackageType": 1152,
+          "StandardPackage": 1,
+          "StandardPricing": [
+            {
+              "BreakQuantity": 1,
+              "TotalPrice": 2.86,
+              "UnitPrice": 2.86
+            },
+            {
+              "BreakQuantity": 10,
+              "TotalPrice": 21.42,
+              "UnitPrice": 2.142
+            },
+            {
+              "BreakQuantity": 25,
+              "TotalPrice": 49.1,
+              "UnitPrice": 1.964
+            },
+            {
+              "BreakQuantity": 100,
+              "TotalPrice": 176.82,
+              "UnitPrice": 1.7682
+            }
+          ],
+          "Supplier": {
+            "Id": 296,
+            "Name": "Texas Instruments"
+          },
+          "TariffActive": false
+        },
+        {
+          "DigiKeyProductNumber": "296-38444-6-ND",
+          "DigiReelFee": 5.5,
+          "MarketPlace": false,
+          "MaxQuantityForDistribution": 999999999,
+          "MinimumOrderQuantity": 1,
+          "MyPricing": [],
+          "PackageType": {
+            "Id": 243,
+            "Name": "Digi-Reel®"
+          },
+          "QuantityAvailableforPackageType": 1152,
+          "StandardPackage": 1,
+          "StandardPricing": [
+            {
+              "BreakQuantity": 1,
+              "TotalPrice": 2.86,
+              "UnitPrice": 2.86
+            },
+            {
+              "BreakQuantity": 10,
+              "TotalPrice": 21.42,
+              "UnitPrice": 2.142
+            },
+            {
+              "BreakQuantity": 25,
+              "TotalPrice": 49.1,
+              "UnitPrice": 1.964
+            },
+            {
+              "BreakQuantity": 100,
+              "TotalPrice": 176.82,
+              "UnitPrice": 1.7682
+            }
+          ],
+          "Supplier": {
+            "Id": 296,
+            "Name": "Texas Instruments"
+          },
+          "TariffActive": false
+        }
+      ],
+      "QuantityAvailable": 1152,
+      "Series": {
+        "Id": 818,
+        "Name": "-"
+      },
+      "ShippingInfo": null,
+      "UnitPrice": 2.86
+    }
+  ],
+  "ProductsCount": 1,
+  "SearchLocaleUsed": {
+    "Currency": "EUR",
+    "Language": "en",
+    "Site": "it"
+  }
+}

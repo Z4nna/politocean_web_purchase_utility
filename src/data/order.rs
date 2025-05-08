@@ -379,6 +379,7 @@ pub async fn create_order_from_kicad_bom(
     // read kicad bom file, for each item, nsert into db
     let bom_items = excel::parse_kicad_bom_file(kicad_bom_file).map_err(|e| DataError::FailedQuery(e))?;
     for item in bom_items {
+        println!("{}: {}x {}", item.manifacturer, item.quantity, item.manifacturer_pn);
         add_item_to_order(pool, order_id, item.manifacturer, item.manifacturer_pn, item.quantity, proposal.clone(), project.clone()).await?;
     }
     Ok(())

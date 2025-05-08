@@ -99,14 +99,19 @@ pub fn parse_kicad_bom_file(book: &Spreadsheet) -> Result<Vec<KiCadItem>, String
     let mut items: Vec<KiCadItem> = Vec::new();
 
     for row_num in 2..=sheet.get_highest_row() {
-        let quantity = sheet.get_value((row_num, 1)).parse::<i32>().unwrap_or(0);
-        let manifacturer = sheet.get_value((row_num, 2));
-        let manifacturer_pn = sheet.get_value((row_num, 3));
-        items.push(KiCadItem {
-            quantity,
-            manifacturer,
-            manifacturer_pn,
-        });
+        println!("Row number: {}", row_num);
+        let quantity = sheet.get_value((1, row_num)).parse::<i32>().unwrap_or(0);
+        let manifacturer = sheet.get_value((2, row_num));
+        let manifacturer_pn = sheet.get_value((3, row_num));
+        println!("Read {} {} {}...", quantity, manifacturer, manifacturer_pn);
+        if quantity > 0 && !manifacturer.is_empty() && !manifacturer_pn.is_empty() { 
+            println!("Adding {} {} {}...", quantity, manifacturer, manifacturer_pn);
+            items.push(KiCadItem {
+                quantity,
+                manifacturer,
+                manifacturer_pn,
+            });
+        }
     }
     Ok(items)
 }

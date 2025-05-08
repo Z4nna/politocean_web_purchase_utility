@@ -7,40 +7,72 @@
 </head>
 <body>
     <!-- Replace inside your <body> -->
-<h1 class="page-title">Crea un Nuovo Ordine</h1>
-<form action="/orders/new/submit" method="post" class="order-form">
-    <div class="form-row">
-        <label for="description">Descrizione:</label>
-        <input type="text" id="description" name="description" required>
-    </div>
-
-    <div class="form-row">
-        <label for="area_division">Divisione:</label>
-        <input type="text" id="area_division" name="area_division" required>
-    </div>
-
-    <div class="form-row">
-        <label for="area_sub_area">Sub-area:</label>
-        <input type="text" id="area_sub_area" name="area_sub_area" required>
-    </div>
-
-    <h3 class="section-title">Articoli</h3>
-    <div id="items-container">
-        <div class="item-entry header-row">
-            <span>Proposal</span>
-            <span>Project</span>
-            <span>Manufacturer</span>
-            <span>P.N.</span>
-            <span>Quantity</span>
-            <span></span> <!-- for the remove button column -->
+    <h1 class="page-title">Crea un Nuovo Ordine</h1>
+    <form action="/orders/new/submit" method="post" class="order-form">
+        <div class="form-row">
+            <label for="description">Descrizione:</label>
+            <input type="text" id="description" name="description" required>
         </div>
-    </div>
 
-    <button type="button" class="add-button" onclick="addItemEntry()">+ Aggiungi Articolo</button>
+        <div class="form-row">
+            <label for="area_division">Divisione:</label>
+            <input type="text" id="area_division" name="area_division" required>
+        </div>
 
-    <br><br>
-    <button type="submit">Crea Ordine</button>
-</form>
+        <div class="form-row">
+            <label for="area_sub_area">Sub-area:</label>
+            <input type="text" id="area_sub_area" name="area_sub_area" required>
+        </div>
+
+        <h3 class="section-title">Articoli</h3>
+        <div id="items-container">
+            <div class="item-entry header-row">
+                <span>Proposal</span>
+                <span>Project</span>
+                <span>Manufacturer</span>
+                <span>P.N.</span>
+                <span>Quantity</span>
+                <span></span> <!-- for the remove button column -->
+            </div>
+        </div>
+
+        <button type="button" class="add-button" onclick="addItemEntry()">+ Aggiungi Articolo</button>
+
+        <br><br>
+        <button type="submit">Crea Ordine</button>
+    </form>
+    <hr>
+
+    <p>In alternativa, carica la BOM di KiCAD</p>
+    <form action="/orders/new/upload-kicad-bom" method="post" enctype="multipart/form-data" class="order-form">
+        <div class="form-row">
+            <label for="description">Descrizione:</label>
+            <input type="text" id="description" name="description" required>
+        </div>
+
+        <div class="form-row">
+            <label for="area_division">Divisione:</label>
+            <input type="text" id="area_division" name="area_division" required>
+        </div>
+
+        <div class="form-row">
+            <label for="area_sub_area">Sub-area:</label>
+            <input type="text" id="area_sub_area" name="area_sub_area" required>
+        </div>
+
+        <div class="form-row">
+            <label for="proposal">Proposal:</label>
+            <input type="text" id="proposal" name="proposal" required>
+        </div>
+
+        <div class="form-row">
+            <label for="project">Project:</label>
+            <input type="text" id="project" name="project" required>
+        </div>
+
+        <input type="file" name="file">
+        <button type="submit">Upload</button>
+    </form>
 
     <script src="/static/js/new_order.js"></script>
 </body>

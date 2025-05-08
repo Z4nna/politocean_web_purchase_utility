@@ -34,6 +34,7 @@ pub enum AppError {
 
     #[error("Failed loading session")]
     Session(#[from] tower_sessions::session::Error),
+
 }
 
 impl IntoResponse for AppError {
