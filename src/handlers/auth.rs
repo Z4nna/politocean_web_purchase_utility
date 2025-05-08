@@ -26,5 +26,11 @@ pub async fn login_handler(
     ).await?;
     session.insert("authenticated_user_id", user_id).await?;
     println!("User logged in with id: {}.", user_id);
-    Ok(Redirect::to("/home").into_response())
+    // check if user is prof, redirect to his homepage
+    let user_role = user::get_user_role(&app_state.connection_pool, user_id).await?;
+    if user_role == "prof" {
+        Ok(Redirect::to("/prof").into_response())
+    } else {
+        Ok(Redirect::to("/home").into_response())
+    }
 }

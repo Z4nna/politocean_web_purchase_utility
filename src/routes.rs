@@ -1,5 +1,5 @@
 use axum::{middleware, routing::{get, post}, Router};
-use crate::handlers::{auth, new_order, advisors_homepage, edit_order};
+use crate::handlers::{advisors_homepage, auth, board_homepage, edit_order, new_order, prof_homepage};
 use crate::models::app;
 use tower_http::services::ServeDir;
 use crate::middlewares;
@@ -10,7 +10,7 @@ pub fn get_router(app_state: app::AppState) -> Router {
     Router::new()
     .route("/", get(auth::login))
     .merge(auth_routes())
-    .route("/home", get(advisors_homepage::advisors_homepage_handler))
+    .merge(home_routes())
     .merge(orders_routes())
     .nest_service("/static", server_dir)
     .layer(middleware::from_fn(middlewares::auth::authenticate))
@@ -20,6 +20,14 @@ pub fn get_router(app_state: app::AppState) -> Router {
 fn auth_routes() -> Router<app::AppState> {
     Router::new()
         .route("/log-in", post(auth::login_handler))
+}
+
+fn home_routes() -> Router<app::AppState> {
+    Router::new()
+        .route("/home", get(advisors_homepage::advisors_homepage_handler))
+        .route("/board/home", get(board_homepage::board_homepage_handler))
+        .route("/prof", get(prof_homepage::prof_homepage_handler))
+        .route_layer(middleware::from_fn(middlewares::auth::required_authentication))
 }
 
 fn orders_routes() -> Router<app::AppState> {

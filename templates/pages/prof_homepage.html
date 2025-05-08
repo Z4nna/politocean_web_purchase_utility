@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ordini</title>
+    <link rel="stylesheet" href="/static/css/global.css" />
+    <link rel="stylesheet" href="/static/css/advisors_homepage.css" />
+</head>
+<body>
+    <div class="container">
+        <h1 class="page-title">Elenco Ordini</h1>
+
+        <div class="table-wrapper">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>ID Ordine</th>
+                        <th>Descrizione</th>
+                        <th>Data</th>
+                        <th>Stato</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>{{ order.id }}</td>
+                        <td>{{ order.description }}</td>
+                        <td>{{ order.get_date() }}</td>
+                        <td class="status-cell" style="background-color: {{ order.get_bg_color() }};">
+                            {{ order.get_status() }}
+                        </td>
+                        <td class="actions-cell">
+                            <form action="/orders/{{ order.id }}/edit" class="inline-form action" method="get">
+                                <button type="submit">Edit</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <hr>
+
+    </div>
+</body>
+</html>

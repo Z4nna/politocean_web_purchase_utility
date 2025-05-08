@@ -57,6 +57,28 @@ pub async fn get_order_from_author_id(author_id: i32, pool: &PgPool) -> Result<V
     Ok(user_orders)
 }
 
+pub async fn get_ready_orders(pool: &PgPool) -> Result<Vec<Order>, DataError> {
+    let user_orders = sqlx::query_as!(
+        Order,
+        "SELECT * FROM orders WHERE ready = true ORDER BY date DESC"
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|e| DataError::Query(e))?;
+    Ok(user_orders)
+}
+
+pub async fn get_confirmed_orders(pool: &PgPool) -> Result<Vec<Order>, DataError> {
+    let user_orders = sqlx::query_as!(
+        Order,
+        "SELECT * FROM orders WHERE confirmed = true ORDER BY date DESC"
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|e| DataError::Query(e))?;
+    Ok(user_orders)
+}
+
 pub async fn get_order_from_id(order_id: i32, pool: &PgPool) -> Result<Order, DataError> {
     let user_orders = sqlx::query_as!(
         Order,

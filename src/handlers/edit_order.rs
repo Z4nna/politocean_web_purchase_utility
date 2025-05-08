@@ -1,6 +1,6 @@
 use askama::Template;
 use crate::{
-    data::{errors, item, order}, models::{app::AppState, templates::EditOrderTemplate}
+    data::{errors, item, order, user}, models::{app::AppState, templates::EditOrderTemplate}
 };
 use axum::{
     body::Body, extract::{Path, State}, http::{header, HeaderValue, StatusCode}, response::{Html, IntoResponse, Redirect, Response}, Form
@@ -128,7 +128,15 @@ pub async fn mark_order_confirmed_handler(State(app_state): State<AppState>,sess
     match user_id {
         Some(id) => {
             // first check if user is authorized to mark as confirmed (i.e. PM or CTO)
-            if id == 1 {order::mark_order_confirmed(&app_state.connection_pool, order_id).await?;}
+            let user_role_result = user::get_user_role(&app_state.connection_pool, id).await;
+            if let Ok(user_role) = user_role_result {
+                if user_role != "board" {
+                    return Ok(Redirect::to("/home").into_response());
+                } else {
+                    order::mark_order_confirmed(&app_state.connection_pool, order_id).await?;
+                    return Ok(Redirect::to("/board/home").into_response());
+                }
+            }
             Ok(Redirect::to("/home").into_response())
         }
         None => {
@@ -146,7 +154,15 @@ pub async fn mark_order_unconfirmed_handler(State(app_state): State<AppState>,se
     match user_id {
         Some(id) => {
             // first check if user is authorized to mark as confirmed (i.e. PM or CTO)
-            if id == 1 {order::mark_order_unconfirmed(&app_state.connection_pool, order_id).await?;}
+            let user_role_result = user::get_user_role(&app_state.connection_pool, id).await;
+            if let Ok(user_role) = user_role_result {
+                if user_role != "board" {
+                    return Ok(Redirect::to("/home").into_response());
+                } else {
+                    order::mark_order_unconfirmed(&app_state.connection_pool, order_id).await?;
+                    return Ok(Redirect::to("/board/home").into_response());
+                }
+            }
             Ok(Redirect::to("/home").into_response())
         }
         None => {

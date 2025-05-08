@@ -33,3 +33,19 @@ pub async fn authenticate_user(
         Ok(user.id)
     }
 }
+
+pub async fn get_user_role(pool: &PgPool, user_id: i32) -> Result<String, DataError> {
+    let user_role_result = sqlx::query!(
+        "SELECT role FROM users WHERE id = $1",
+        user_id
+    )
+    .fetch_one(pool)
+    .await
+    .map_err(|e| DataError::Query(e));
+
+    if let Ok(user_role) = user_role_result {
+        Ok(user_role.role)
+    } else {
+        Err(DataError::FailedQuery("User not found".to_string()))
+    }
+}

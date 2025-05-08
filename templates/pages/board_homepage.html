@@ -34,18 +34,13 @@
                                 <form action="/orders/{{ order.id }}/edit" class="inline-form action" method="get">
                                     <button type="submit">Edit</button>
                                 </form>
-                                {% if order.ready == false %}
-                                <form action="/orders/{{ order.id }}/ready" method="post" class="inline-form action">
-                                    <button type="submit" class="button">Mark as ready</button>
+                                <form action="/orders/{{ order.id }}/confirm" method="post" class="inline-form action">
+                                    <button type="submit" class="button">Mark as confirmed</button>
                                 </form>
-                                <form action="/orders/{{ order.id }}/delete" method="post" class="inline-form action">
-                                    <button type="submit" class="button remove-button">Delete</button>
+                            {% else %}
+                                <form action="/orders/{{ order.id }}/unconfirm" method="post" class="inline-form action">
+                                    <button type="submit" class="button">Mark as unconfirmed</button>
                                 </form>
-                                {% else %}
-                                <form action="/orders/{{ order.id }}/unready" method="post" class="inline-form action">
-                                    <button type="submit" class="button">Mark as unready</button>
-                                </form>
-                                {% endif %}
                             {% endif %}
                         </td>
                     </tr>
@@ -56,12 +51,8 @@
 
         <hr>
 
-        <div class="new-order-button">
-            <a href="/orders/new" class="button">➕ Nuovo Ordine</a>
-        </div>
-
         <div>
-            <a href="/board/home" class="button">Board reserved area access</a>
+            <a href="/home" class="button">Go back to advisors area</a>
         </div>
 
     </div>
