@@ -1,6 +1,15 @@
 use umya_spreadsheet::{writer, reader, Spreadsheet};
 use std::io::Cursor;
 
+use super::item;
+
+#[derive(Debug, Clone)]
+pub struct KiCadItem {
+    pub quantity: i32,
+    pub manifacturer: String,
+    pub manifacturer_pn: String,
+}
+
 pub fn create_bom_file() -> Spreadsheet {
     let mut book: Spreadsheet = umya_spreadsheet::new_file();
     let _sheet = book.new_sheet("Ordine").unwrap();
@@ -83,4 +92,21 @@ pub fn load_from_bytes(bytes: &[u8]) -> Result<Spreadsheet, String> {
 pub fn save_to_file(book: &Spreadsheet) {
     let path = std::path::Path::new("/Users/michelecarenini/Desktop/test.xlsx");
     let _ = writer::xlsx::write(&book, path);
+}
+
+pub fn parse_kicad_bom_file(book: &Spreadsheet) -> Result<Vec<KiCadItem>, String> {
+    let sheet = book.get_sheet(&0).expect("Sheet not found");
+    let mut items: Vec<KiCadItem> = Vec::new();
+
+    for row_num in 2..=sheet.get_highest_row() {
+        let quantity = sheet.get_value((row_num, 1)).parse::<i32>().unwrap_or(0);
+        let manifacturer = sheet.get_value((row_num, 2));
+        let manifacturer_pn = sheet.get_value((row_num, 3));
+        items.push(KiCadItem {
+            quantity,
+            manifacturer,
+            manifacturer_pn,
+        });
+    }
+    Ok(items)
 }

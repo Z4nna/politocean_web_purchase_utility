@@ -1,6 +1,7 @@
 use crate::data::{item, errors::DataError};
 use sqlx::{PgPool, types::time::Date};
 use time::format_description;
+use umya_spreadsheet::Spreadsheet;
 
 use crate::data::mouser_apis;
 
@@ -360,5 +361,25 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
     .await
     .map_err(|e| DataError::Query(e))?;
 
+    Ok(())
+}
+
+pub async fn create_order_from_kicad_bom(
+    pool: &PgPool,
+    author_id: i32,
+    description: String,
+    area_division: String,
+    area_sub_area: String,
+    proposal: String,
+    project: String,
+    kicad_bom_file: &Spreadsheet
+) -> Result<(), DataError> {
+    // create order
+    let order_id = create_order(pool, author_id, description, area_division, area_sub_area).await?;
+    // read kicad bom file, for each item, nsert into db
+    let bom_items = excel::parse_kicad_bom_file(kicad_bom_file).map_err(|e| DataError::FailedQuery(e))?;
+    for item in bom_items {
+        add_item_to_order(pool, order_id, item.manifacturer, item.manifacturer_pn, item.quantity, proposal.clone(), project.clone()).await?;
+    }
     Ok(())
 }
