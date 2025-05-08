@@ -1,4 +1,5 @@
 use askama::Template;
+use umya_spreadsheet::Spreadsheet;
 use crate::{
     data::{errors, item, order, user}, models::{app::AppState, templates::EditOrderTemplate}
 };
@@ -10,6 +11,19 @@ use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use zip::write::FileOptions;
 use std::{collections::{HashMap, HashSet}, io::Write};
 use std::io::Cursor;
+
+
+#[derive(sqlx::FromRow, Debug, Clone)]
+struct DigiKeyItem {
+    pub quantity: i32,
+    pub digikey_pn: Option<String>,
+}
+
+#[derive(sqlx::FromRow, Debug, Clone)]
+struct MouserItem {
+    pub quantity: i32,
+    pub mouser_pn: Option<String>,
+}
 
 pub async fn edit_order_handler(
     State(app_state): State<AppState>,
@@ -268,9 +282,79 @@ pub async fn delete_order_handler(
     State(app_state): State<AppState>,
     _session: Session,
     Path(order_id): Path<i32>,
-) -> Result<Response, errors::AppError>{
+) -> Result<Response, errors::AppError> {
     println!("Handler called {}", order_id);
     order::delete_order(&app_state.connection_pool, order_id).await?;
     println!("Deleted order {}", order_id);
     Ok(Redirect::to("/home").into_response())
+}
+
+pub async fn download_digikey_cart_handler(
+    State(app_state): State<AppState>,
+    _session: Session,
+    Path(order_id): Path<i32>,
+) -> Result<Response, errors::AppError> {
+    // 1. create xlsx file (column 1 quantity, column 2 part number), no header
+    // 1.1 get digikey items from db
+    let items = item::get_items_from_order(order_id, &app_state.connection_pool).await?;
+
+    let mut book: Spreadsheet = umya_spreadsheet::new_file();
+
+    let order_sheet = book.get_sheet_mut(&0).unwrap();
+    // insert items
+    let mut row = 1;
+    for item in items {
+        if let Some(pn) = item.digikey_pn {
+            order_sheet.get_cell_mut((1, row)).set_value(item.quantity.to_string()); // quantity
+            order_sheet.get_cell_mut((2, row)).set_value(pn); // PN
+            row += 1;
+        }
+    }
+    // 2. download file
+    let mut buffer = Cursor::new(Vec::new());
+    umya_spreadsheet::writer::xlsx::write_writer(&book, &mut buffer).map_err(|e| errors::DataError::Internal(e.to_string()))?;
+
+    let content_disposition = format!(r#"attachment; filename="digikey_cart_{}.xlsx""#, order_id);
+    let response = Response::builder()
+            .status(StatusCode::OK)
+            .header(header::CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            .header(header::CONTENT_DISPOSITION, HeaderValue::from_str(&content_disposition).unwrap())
+            .body(Body::from(buffer.into_inner()))
+            .unwrap();
+    Ok(response)
+}
+
+pub async fn download_mouser_cart_handler(
+    State(app_state): State<AppState>,
+    _session: Session,
+    Path(order_id): Path<i32>,
+) -> Result<Response, errors::AppError> {
+    // 1. create xlsx file (column 1 quantity, column 2 part number), no header
+    // 1.1 get mouser items from db
+    let items = item::get_items_from_order(order_id, &app_state.connection_pool).await?;
+
+    let mut book: Spreadsheet = umya_spreadsheet::new_file();
+
+    let order_sheet = book.get_sheet_mut(&0).unwrap();
+    // insert items
+    let mut row = 1;
+    for item in items {
+        if let Some(pn) = item.mouser_pn {
+            order_sheet.get_cell_mut((1, row)).set_value(item.quantity.to_string()); // quantity
+            order_sheet.get_cell_mut((2, row)).set_value(pn); // PN
+            row += 1;
+        }
+    }
+    // 2. download file
+    let mut buffer = Cursor::new(Vec::new());
+    umya_spreadsheet::writer::xlsx::write_writer(&book, &mut buffer).map_err(|e| errors::DataError::Internal(e.to_string()))?;
+
+    let content_disposition = format!(r#"attachment; filename="mouser_cart_{}.xlsx""#, order_id);
+    let response = Response::builder()
+            .status(StatusCode::OK)
+            .header(header::CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            .header(header::CONTENT_DISPOSITION, HeaderValue::from_str(&content_disposition).unwrap())
+            .body(Body::from(buffer.into_inner()))
+            .unwrap();
+    Ok(response)
 }

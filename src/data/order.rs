@@ -264,7 +264,14 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
                 && mouser_part.unit_price > 0.0
                 && (mouser_part.unit_price < digikey_part.unit_price || digikey_part.unit_price == 0.0)  {
                     // adding to mouser book, set mouser_pn in db
-                    item::set_item_pn(pool, order_id, mouser_part.manufacturer.clone(), mouser_part.manufacturer_pn.clone(), Some(mouser_part.mouser_pn.clone()), None);
+                    item::set_item_pn(
+                        pool, 
+                        order_id, 
+                        item.manufacturer.clone(), 
+                        item.manufacturer_pn.clone(), 
+                        Some(mouser_part.mouser_pn.clone()), 
+                        None
+                    ).await?;
                     excel::add_item_to_bom(
                         &mut mouser_book,
                         mouser_part.manufacturer,
@@ -279,7 +286,14 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
                 } else if digikey_part.availability >= item.quantity as u32 
                 && digikey_part.unit_price > 0.0 {
                     // adding to digikey book, set digikey_pn in db
-                    item::set_item_pn(pool, order_id, digikey_part.manufacturer.clone(), digikey_part.manufacturer_pn.clone(), None, Some(digikey_part.digikey_pn.clone()));
+                    item::set_item_pn(
+                        pool, 
+                        order_id, 
+                        item.manufacturer.clone(),
+                        item.manufacturer_pn.clone(), 
+                        None, 
+                        Some(digikey_part.digikey_pn.clone())
+                    ).await?;
                     excel::add_item_to_bom(
                         &mut digikey_book,
                         digikey_part.manufacturer,
@@ -292,6 +306,7 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
                         item.project,
                         "".to_string()).map_err(|e| DataError::FailedQuery(e.to_string()))?;
                 } else {
+                    println!("Item not available on both mouser and digikey");
                     excel::add_item_to_bom(
                         &mut mouser_book,
                         item.manufacturer,
@@ -307,7 +322,14 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
             },
             (None, Some(digikey_part)) => { // only available on digikey
                 println!("id: {}, digikey_price: {}", item.manufacturer_pn, digikey_part.unit_price);
-                item::set_item_pn(pool, order_id, digikey_part.manufacturer.clone(), digikey_part.manufacturer_pn.clone(), None, Some(digikey_part.digikey_pn.clone()));
+                item::set_item_pn(
+                    pool, 
+                    order_id, 
+                    item.manufacturer.clone(), 
+                    item.manufacturer_pn.clone(), 
+                    None, 
+                    Some(digikey_part.digikey_pn.clone())
+                ).await?;
                 excel::add_item_to_bom(
                     &mut digikey_book, 
                     digikey_part.manufacturer, 
@@ -322,7 +344,14 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
             }
             (Some(mouser_part), None) => { // only available on mouser
                 println!("id: {}, mouser_price: {}", item.manufacturer_pn, mouser_part.unit_price);
-                item::set_item_pn(pool, order_id, mouser_part.manufacturer.clone(), mouser_part.manufacturer_pn.clone(), Some(mouser_part.mouser_pn.clone()), None);
+                item::set_item_pn(
+                    pool, 
+                    order_id, 
+                    item.manufacturer.clone(), 
+                    item.manufacturer_pn.clone(), 
+                    Some(mouser_part.mouser_pn.clone()), 
+                    None
+                ).await?;
                 excel::add_item_to_bom(
                     &mut mouser_book,
                     mouser_part.manufacturer,

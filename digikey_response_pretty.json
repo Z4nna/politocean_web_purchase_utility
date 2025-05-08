@@ -10,9 +10,9 @@
   "FilterOptions": {
     "Manufacturers": [
       {
-        "Id": 296,
+        "Id": 497,
         "ProductCount": 1,
-        "Value": "Texas Instruments"
+        "Value": "STMicroelectronics"
       }
     ],
     "MarketPlaceFilters": [
@@ -26,11 +26,11 @@
     "TopCategories": [
       {
         "Category": {
-          "Id": 693,
-          "Name": "Voltage Reference",
+          "Id": 699,
+          "Name": "Voltage Regulators - Linear, Low Drop Out (LDO) Regulators",
           "ProductCount": 1
         },
-        "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/002/656/456/TSOT-23-6%2C%20TSOT-6_tmb.jpg",
+        "ImageUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/derivates/3/100/957/739/296_SOT-23-3%20PKG_tmb.jpg",
         "RootCategory": {
           "Id": 2025,
           "Name": "Power Management (PMIC)",
@@ -44,8 +44,8 @@
     {
       "BackOrderNotAllowed": false,
       "BaseProductNumber": {
-        "Id": 27326,
-        "Name": "REF1933"
+        "Id": 22100,
+        "Name": "LD1117"
       },
       "Category": {
         "CategoryId": 32,
@@ -54,14 +54,14 @@
             "CategoryId": 2025,
             "ChildCategories": [
               {
-                "CategoryId": 693,
+                "CategoryId": 699,
                 "ChildCategories": [],
-                "ImageUrl": "https://www.digikey.it//mm.digikey.com/Volume0/opasdata/d220001/derivates/3/002/656/456/TSOT-23-6%2C%20TSOT-6_tmb.jpg",
-                "Name": "Voltage Reference",
+                "ImageUrl": "https://www.digikey.it//mm.digikey.com/Volume0/opasdata/d220001/derivates/3/100/957/739/296_SOT-23-3%20PKG_tmb.jpg",
+                "Name": "Voltage Regulators - Linear, Low Drop Out (LDO) Regulators",
                 "NewProductCount": 0,
                 "ParentId": 2025,
                 "ProductCount": 0,
-                "SeoDescription": "Products in the voltage reference family are used to derive an electrical potential having a stable, well-established value from a source of more uncertain character, for use as a standard of comparison in measurement, control, and similar applications. While their functional behavior may be similar to that of linear voltage regulators used for purposes of bulk power regulation, voltage reference devices are not adapted for use as such; their performance as standards of comparison has a generally inverse relationship with increasing output current capacity or actual current drawn by a load."
+                "SeoDescription": "Linear voltage regulators, including LDO (Low Drop Out) types, are used to provide a stable output voltage that is nominally invariant with respect to changes in load current, input voltage, or environmental factors. Their operating principle requires that the input voltage be maintained above the desired output voltage by some minimum amount, and function on the basis of converting whatever excess voltage is present at the input to heat. While this renders them less efficient than switch-mode voltage regulators for most applications, they are often better suited for applications with high sensitivity to noise."
               }
             ],
             "ImageUrl": "https://www.digikey.it//mm.digikey.com/Volume0/opasdata/d220001/derivates/3/300/314/540/846%3B-TO220CP-3%3B-%3B-3_tmb.jpg",
@@ -82,40 +82,40 @@
       "Classifications": {
         "ExportControlClassNumber": "EAR99",
         "HtsusCode": "8542.39.0060",
-        "MoistureSensitivityLevel": "2  (1 Year)",
+        "MoistureSensitivityLevel": "1  (Unlimited)",
         "ReachStatus": "REACH Unaffected",
         "RohsStatus": "ROHS3 Compliant"
       },
-      "DatasheetUrl": "https://www.ti.com/general/docs/suppproductinfo.tsp?distId=10&gotoUrl=https%3A%2F%2Fwww.ti.com%2Flit%2Fgpn%2Fref1925",
+      "DatasheetUrl": "https://www.st.com/content/ccc/resource/technical/document/datasheet/99/3b/7d/91/91/51/4b/be/CD00000544.pdf/files/CD00000544.pdf/jcr:content/translations/en.CD00000544.pdf",
       "DateLastBuyChance": null,
       "Description": {
-        "DetailedDescription": "Series Voltage Reference IC Fixed 3.3V V ±0.1% 20 mA SOT-23-THIN",
-        "ProductDescription": "IC VREF SERIES 0.1% SOT23-5"
+        "DetailedDescription": "Linear Voltage Regulator IC Positive Fixed 1 Output 800mA SOT-223",
+        "ProductDescription": "IC REG LINEAR 3.3V 800MA SOT-223"
       },
       "Discontinued": false,
       "EndOfLife": false,
       "Manufacturer": {
-        "Id": 296,
-        "Name": "Texas Instruments"
+        "Id": 497,
+        "Name": "STMicroelectronics"
       },
-      "ManufacturerLeadWeeks": "18",
-      "ManufacturerProductNumber": "REF1933AIDDCT",
+      "ManufacturerLeadWeeks": "12",
+      "ManufacturerProductNumber": "LD1117S33TR",
       "ManufacturerPublicQuantity": 0,
       "Ncnr": false,
       "NormallyStocking": true,
       "OtherNames": [
-        "296-38444-6",
-        "REF1933AIDDCT-ND",
-        "296-38444-2",
-        "296-38444-1"
+        "497-1242-6",
+        "1026-LD1117S33TR",
+        "497-1242-2",
+        "497-1242-1"
       ],
       "Parameters": [
         {
-          "ParameterId": 245,
-          "ParameterText": "Reference Type",
+          "ParameterId": 255,
+          "ParameterText": "Output Configuration",
           "ParameterType": "String",
-          "ValueId": "401373",
-          "ValueText": "Series"
+          "ValueId": "389019",
+          "ValueText": "Positive"
         },
         {
           "ParameterId": 41,
@@ -125,6 +125,20 @@
           "ValueText": "Fixed"
         },
         {
+          "ParameterId": 1065,
+          "ParameterText": "Number of Regulators",
+          "ParameterType": "Double",
+          "ValueId": "1",
+          "ValueText": "1"
+        },
+        {
+          "ParameterId": 573,
+          "ParameterText": "Voltage - Input (Max)",
+          "ParameterType": "String",
+          "ValueId": "103542",
+          "ValueText": "15V"
+        },
+        {
           "ParameterId": 1779,
           "ParameterText": "Voltage - Output (Min/Fixed)",
           "ParameterType": "String",
@@ -132,60 +146,60 @@
           "ValueText": "3.3V"
         },
         {
-          "ParameterId": 2114,
-          "ParameterText": "Current - Output",
-          "ParameterType": "UnitOfMeasure",
-          "ValueId": "20 mA",
-          "ValueText": "20 mA"
-        },
-        {
-          "ParameterId": 3,
-          "ParameterText": "Tolerance",
-          "ParameterType": "String",
-          "ValueId": "731",
-          "ValueText": "±0.1%"
-        },
-        {
-          "ParameterId": 17,
-          "ParameterText": "Temperature Coefficient",
-          "ParameterType": "String",
-          "ValueId": "159214",
-          "ValueText": "25ppm/°C"
-        },
-        {
-          "ParameterId": 1781,
-          "ParameterText": "Noise - 0.1Hz to 10Hz",
-          "ParameterType": "String",
-          "ValueId": "87558",
-          "ValueText": "12ppmp-p"
-        },
-        {
-          "ParameterId": 1782,
-          "ParameterText": "Noise - 10Hz to 10kHz",
+          "ParameterId": 1429,
+          "ParameterText": "Voltage - Output (Max)",
           "ParameterType": "String",
           "ValueId": "1",
           "ValueText": "-"
         },
         {
-          "ParameterId": 127,
-          "ParameterText": "Voltage - Input",
+          "ParameterId": 2065,
+          "ParameterText": "Voltage Dropout (Max)",
           "ParameterType": "String",
-          "ValueId": "173509",
-          "ValueText": "3.32V ~ 5.5V"
+          "ValueId": "48818",
+          "ValueText": "1.2V @ 800mA"
         },
         {
-          "ParameterId": 449,
-          "ParameterText": "Current - Supply",
+          "ParameterId": 129,
+          "ParameterText": "Current - Output",
           "ParameterType": "String",
-          "ValueId": "222699",
-          "ValueText": "460µA"
+          "ValueId": "286223",
+          "ValueText": "800mA"
+        },
+        {
+          "ParameterId": 477,
+          "ParameterText": "Current - Quiescent (Iq)",
+          "ParameterType": "UnitOfMeasure",
+          "ValueId": "10 mA",
+          "ValueText": "10 mA"
+        },
+        {
+          "ParameterId": 2064,
+          "ParameterText": "PSRR",
+          "ParameterType": "String",
+          "ValueId": "277897",
+          "ValueText": "75dB (120Hz)"
+        },
+        {
+          "ParameterId": 1880,
+          "ParameterText": "Control Features",
+          "ParameterType": "String",
+          "ValueId": "1",
+          "ValueText": "-"
+        },
+        {
+          "ParameterId": 2066,
+          "ParameterText": "Protection Features",
+          "ParameterType": "String",
+          "ValueId": "382816",
+          "ValueText": "Over Current, Over Temperature"
         },
         {
           "ParameterId": 252,
           "ParameterText": "Operating Temperature",
           "ParameterType": "String",
-          "ValueId": "212479",
-          "ValueText": "-40°C ~ 125°C (TA)"
+          "ValueId": "38908",
+          "ValueText": "0°C ~ 125°C"
         },
         {
           "ParameterId": 69,
@@ -198,166 +212,201 @@
           "ParameterId": 16,
           "ParameterText": "Package / Case",
           "ParameterType": "String",
-          "ValueId": "405424",
-          "ValueText": "SOT-23-5 Thin, TSOT-23-5"
+          "ValueId": "413435",
+          "ValueText": "TO-261-4, TO-261AA"
         },
         {
           "ParameterId": 1291,
           "ParameterText": "Supplier Device Package",
           "ParameterType": "String",
-          "ValueId": "503772",
-          "ValueText": "SOT-23-THIN"
+          "ValueId": "405376",
+          "ValueText": "SOT-223"
         }
       ],
-      "PhotoUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/medias/images/6286/296%7E4204403-2%7EDDC%7E5.jpg",
-      "PrimaryVideoUrl": null,
+      "PhotoUrl": "https://mm.digikey.com/Volume0/opasdata/d220001/medias/images/6256/497%7ESOT223%7E%7E4.jpg",
+      "PrimaryVideoUrl": "https://www.digikey.com/api/videos/videoplayer/smallplayer/6185148583001",
       "ProductStatus": {
         "Id": 0,
         "Status": "Active"
       },
-      "ProductUrl": "https://www.digikey.com/en/products/detail/texas-instruments/REF1933AIDDCT/5014149",
+      "ProductUrl": "https://www.digikey.com/en/products/detail/stmicroelectronics/LD1117S33TR/585766",
       "ProductVariations": [
         {
-          "DigiKeyProductNumber": "296-38444-2-ND",
+          "DigiKeyProductNumber": "497-1242-2-ND",
           "DigiReelFee": 0.0,
           "MarketPlace": false,
-          "MaxQuantityForDistribution": 999999999,
-          "MinimumOrderQuantity": 250,
+          "MaxQuantityForDistribution": 0,
+          "MinimumOrderQuantity": 2500,
           "MyPricing": [],
           "PackageType": {
             "Id": 1,
             "Name": "Tape & Reel (TR)"
           },
-          "QuantityAvailableforPackageType": 1000,
-          "StandardPackage": 250,
+          "QuantityAvailableforPackageType": 29234,
+          "StandardPackage": 0,
           "StandardPricing": [
             {
-              "BreakQuantity": 250,
-              "TotalPrice": 418.7,
-              "UnitPrice": 1.6748
-            },
-            {
-              "BreakQuantity": 500,
-              "TotalPrice": 809.26,
-              "UnitPrice": 1.61852
-            },
-            {
-              "BreakQuantity": 750,
-              "TotalPrice": 1192.7475,
-              "UnitPrice": 1.59033
-            },
-            {
-              "BreakQuantity": 1250,
-              "TotalPrice": 1948.8625,
-              "UnitPrice": 1.55909
-            },
-            {
-              "BreakQuantity": 1750,
-              "TotalPrice": 2696.4525,
-              "UnitPrice": 1.54083
-            },
-            {
               "BreakQuantity": 2500,
-              "TotalPrice": 3808.175,
-              "UnitPrice": 1.52327
+              "TotalPrice": 321.5,
+              "UnitPrice": 0.1286
+            },
+            {
+              "BreakQuantity": 5000,
+              "TotalPrice": 623.65,
+              "UnitPrice": 0.12473
+            },
+            {
+              "BreakQuantity": 7500,
+              "TotalPrice": 920.85,
+              "UnitPrice": 0.12278
+            },
+            {
+              "BreakQuantity": 12500,
+              "TotalPrice": 1508.0,
+              "UnitPrice": 0.12064
+            },
+            {
+              "BreakQuantity": 17500,
+              "TotalPrice": 2089.15,
+              "UnitPrice": 0.11938
+            },
+            {
+              "BreakQuantity": 25000,
+              "TotalPrice": 2954.25,
+              "UnitPrice": 0.11817
+            },
+            {
+              "BreakQuantity": 62500,
+              "TotalPrice": 7223.125,
+              "UnitPrice": 0.11557
             }
           ],
           "Supplier": {
-            "Id": 296,
-            "Name": "Texas Instruments"
+            "Id": 497,
+            "Name": "STMicroelectronics"
           },
-          "TariffActive": false
+          "TariffActive": true
         },
         {
-          "DigiKeyProductNumber": "296-38444-1-ND",
+          "DigiKeyProductNumber": "497-1242-1-ND",
           "DigiReelFee": 0.0,
           "MarketPlace": false,
-          "MaxQuantityForDistribution": 999999999,
+          "MaxQuantityForDistribution": 0,
           "MinimumOrderQuantity": 1,
           "MyPricing": [],
           "PackageType": {
             "Id": 2,
             "Name": "Cut Tape (CT)"
           },
-          "QuantityAvailableforPackageType": 1152,
-          "StandardPackage": 1,
+          "QuantityAvailableforPackageType": 29234,
+          "StandardPackage": 0,
           "StandardPricing": [
             {
               "BreakQuantity": 1,
-              "TotalPrice": 2.86,
-              "UnitPrice": 2.86
+              "TotalPrice": 0.3,
+              "UnitPrice": 0.3
             },
             {
               "BreakQuantity": 10,
-              "TotalPrice": 21.42,
-              "UnitPrice": 2.142
+              "TotalPrice": 2.1,
+              "UnitPrice": 0.21
             },
             {
               "BreakQuantity": 25,
-              "TotalPrice": 49.1,
-              "UnitPrice": 1.964
+              "TotalPrice": 4.66,
+              "UnitPrice": 0.1864
             },
             {
               "BreakQuantity": 100,
-              "TotalPrice": 176.82,
-              "UnitPrice": 1.7682
+              "TotalPrice": 16.07,
+              "UnitPrice": 0.1607
+            },
+            {
+              "BreakQuantity": 250,
+              "TotalPrice": 37.13,
+              "UnitPrice": 0.14852
+            },
+            {
+              "BreakQuantity": 500,
+              "TotalPrice": 70.56,
+              "UnitPrice": 0.14112
+            },
+            {
+              "BreakQuantity": 1000,
+              "TotalPrice": 135.02,
+              "UnitPrice": 0.13502
             }
           ],
           "Supplier": {
-            "Id": 296,
-            "Name": "Texas Instruments"
+            "Id": 497,
+            "Name": "STMicroelectronics"
           },
-          "TariffActive": false
+          "TariffActive": true
         },
         {
-          "DigiKeyProductNumber": "296-38444-6-ND",
+          "DigiKeyProductNumber": "497-1242-6-ND",
           "DigiReelFee": 5.5,
           "MarketPlace": false,
-          "MaxQuantityForDistribution": 999999999,
+          "MaxQuantityForDistribution": 0,
           "MinimumOrderQuantity": 1,
           "MyPricing": [],
           "PackageType": {
             "Id": 243,
             "Name": "Digi-Reel®"
           },
-          "QuantityAvailableforPackageType": 1152,
-          "StandardPackage": 1,
+          "QuantityAvailableforPackageType": 29234,
+          "StandardPackage": 0,
           "StandardPricing": [
             {
               "BreakQuantity": 1,
-              "TotalPrice": 2.86,
-              "UnitPrice": 2.86
+              "TotalPrice": 0.3,
+              "UnitPrice": 0.3
             },
             {
               "BreakQuantity": 10,
-              "TotalPrice": 21.42,
-              "UnitPrice": 2.142
+              "TotalPrice": 2.1,
+              "UnitPrice": 0.21
             },
             {
               "BreakQuantity": 25,
-              "TotalPrice": 49.1,
-              "UnitPrice": 1.964
+              "TotalPrice": 4.66,
+              "UnitPrice": 0.1864
             },
             {
               "BreakQuantity": 100,
-              "TotalPrice": 176.82,
-              "UnitPrice": 1.7682
+              "TotalPrice": 16.07,
+              "UnitPrice": 0.1607
+            },
+            {
+              "BreakQuantity": 250,
+              "TotalPrice": 37.13,
+              "UnitPrice": 0.14852
+            },
+            {
+              "BreakQuantity": 500,
+              "TotalPrice": 70.56,
+              "UnitPrice": 0.14112
+            },
+            {
+              "BreakQuantity": 1000,
+              "TotalPrice": 135.02,
+              "UnitPrice": 0.13502
             }
           ],
           "Supplier": {
-            "Id": 296,
-            "Name": "Texas Instruments"
+            "Id": 497,
+            "Name": "STMicroelectronics"
           },
-          "TariffActive": false
+          "TariffActive": true
         }
       ],
-      "QuantityAvailable": 1152,
+      "QuantityAvailable": 29234,
       "Series": {
         "Id": 818,
         "Name": "-"
       },
       "ShippingInfo": null,
-      "UnitPrice": 2.86
+      "UnitPrice": 0.3
     }
   ],
   "ProductsCount": 1,

@@ -66,7 +66,7 @@
     </form>
     <hr>
     <h2 class="section-title">Azioni</h2>
-
+    <p>Make sure to re-generate the BOM for every change you make!</p>
     <div class="actions">
         <form action="/home" method="get" class="inline-form">
             <button type="submit" >🏠 Torna alla Home</button>
@@ -77,7 +77,15 @@
         <form action="/orders/{{ order.id }}/edit/download-bom" method="post" class="inline-form">
             <button type="submit">⬇️ Download BOM</button>
         </form>
+        <form action="/orders/{{ order.id}}/edit/download-digikey-cart" method="post" class="inline-form">
+            <button type="submit">🛒 Download Digikey Cart</button>
+        </form>
+        <form action="/orders/{{ order.id}}/edit/create-mouser-cart" method="post" class="inline-form">
+            <button type="submit">🛒 Download Mouser Cart</button>
+        </form>
     </div>
+
+
     <div id="loading-container">
         <div class="cup">
             <span class="steam"></span>
