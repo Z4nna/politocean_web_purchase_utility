@@ -1,149 +1,17 @@
-use core::f64;
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
-use std::{cmp::Ordering, fs::File, io::Write};
+use std::{fs::File, io::Write};
 use dotenvy::dotenv;
-
+use crate::models::digikey_api_models::{
+    TokenResponse,
+    DigiKeyPart,
+    DigiKeyRequestBody,
+    FilterOptionsRequest,
+    SortOptions,
+    DigiKeySearchResult,
+    Product
+};
 
 use serde_path_to_error::deserialize;
-
-#[derive(Debug, Deserialize)]
-struct TokenResponse {
-    access_token: String,
-    token_type: String,
-    expires_in: u64,
-}
-
-#[derive(Deserialize, Debug, Serialize)]
-#[serde(rename_all = "PascalCase")]
-struct DigiKeyRequestBody {
-    keywords: String,
-    limit: u32,
-    offset: u32,
-    filter_options_request: FilterOptionsRequest,
-    sort_options: SortOptions,
-}
-
-#[derive(Deserialize, Debug, Serialize)]
-#[serde(rename_all = "PascalCase")]
-struct SortOptions {
-    field: String,
-    sort_order: String,
-}
-
-#[derive(Deserialize, Debug, Serialize)]
-#[serde(rename_all = "PascalCase")]
-struct FilterOptionsRequest {
-    minimum_quantity_available: u32,
-    market_place_filter: String,
-
-}
-
-#[derive(Deserialize, Debug, Serialize)]
-#[serde(rename_all = "PascalCase")]
-struct DigiKeySearchResult {
-    products: Vec<Product>,
-    products_count: u32,
-    exact_matches: Vec<Product>,
-}
-
-#[derive(Deserialize, Debug, Serialize, Clone)]
-#[serde(rename_all = "PascalCase")]
-pub struct Product {
-    pub description: ProductDescription,
-    pub manufacturer: Manufacturer,
-    pub manufacturer_product_number: String,
-    pub product_url: String,
-    pub datasheet_url: Option<String>,
-    pub quantity_available: u32,
-    pub product_variations: Vec<ProductVariation>,
-}
-
-#[derive(Deserialize, Debug, Serialize, Clone)]
-#[serde(rename_all = "PascalCase")]
-pub struct ProductDescription {
-    pub product_description: String,
-    pub detailed_description: String,
-}
-
-#[derive(Deserialize, Debug, Serialize, Clone)]
-#[serde(rename_all = "PascalCase")]
-pub struct Manufacturer {
-    pub id: i32,
-    pub name: String,
-}
-
-#[derive(Deserialize, Debug, Serialize, Clone)]
-#[serde(rename_all = "PascalCase")]
-pub struct ProductVariation {
-    pub digi_key_product_number: String,
-    pub standard_pricing: Option<Vec<PriceBreak>>,
-    pub quantity_availablefor_package_type: u32,
-    pub minimum_order_quantity: u32,
-}
-
-impl ProductVariation {
-    fn get_price(&self, quantity: u32) -> Option<f64> {
-        match self.clone().standard_pricing {
-            Some(price_breaks) => {
-                let mut unit_price = 0.0;
-                for price in price_breaks {
-                    if quantity >= price.break_quantity {
-                        unit_price = price.unit_price
-                    }
-                }
-                Some(unit_price)
-            },
-            None => {
-                return None;
-            }
-        }
-    }
-}
-
-impl PartialEq for ProductVariation {
-    fn eq(&self, other: &Self) -> bool {
-        self.get_price(0) == other.get_price(0)
-    }
-}
-
-impl Eq for ProductVariation {}
-
-impl PartialOrd for ProductVariation {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for ProductVariation {
-    fn cmp(&self, other: &Self) -> Ordering {
-        let self_price = self.get_price(0).unwrap_or(f64::INFINITY);
-        let other_price = other.get_price(0).unwrap_or(f64::INFINITY);
-
-        self_price
-            .partial_cmp(&other_price)
-            .unwrap_or(Ordering::Equal)
-    }
-}
-
-#[derive(Deserialize, Debug, Serialize, Clone)]
-#[serde(rename_all = "PascalCase")]
-pub struct PriceBreak {
-    pub break_quantity: u32,
-    pub unit_price: f64,
-    pub total_price: f64,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct DigiKeyPart {
-    pub manufacturer: String,
-    pub manufacturer_pn: String,
-    pub description: String,
-    pub digikey_pn: String,
-    pub product_url: String,
-    pub unit_price: f64,
-    pub availability: u32,
-}
 
 async fn digikey_get_token() -> Result<String, Box<dyn std::error::Error>> {
     dotenv().ok();

@@ -1,5 +1,5 @@
 use askama::Template;
-use crate::data::{order::Order, item::OrderItem};
+use crate::{data::order::Order,models::item::OrderItem};
 
 #[derive(Template)]
 #[template(path = "pages/new_order.html")]

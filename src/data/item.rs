@@ -1,17 +1,6 @@
 use crate::data::errors::DataError;
 use sqlx::PgPool;
-
-#[derive(sqlx::FromRow, Debug, Clone)]
-pub struct OrderItem {
-    pub order_id: i32,
-    pub manufacturer: String,
-    pub manufacturer_pn: String,
-    pub quantity: i32,
-    pub proposal: String,
-    pub project: String,
-    pub mouser_pn: Option<String>,
-    pub digikey_pn: Option<String>,
-}
+use crate::models::item::OrderItem;
 
 pub async fn get_items_from_order(order_id: i32, pool: &PgPool) -> Result<Vec<OrderItem>, DataError> {
     let user_orders = sqlx::query_as!(

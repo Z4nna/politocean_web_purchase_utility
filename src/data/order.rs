@@ -1,8 +1,8 @@
 use crate::data::{item, errors::DataError};
+use crate::models::mouser_api_models;
 use sqlx::{PgPool, types::time::Date};
 use time::format_description;
 use umya_spreadsheet::Spreadsheet;
-
 use crate::data::mouser_apis;
 
 use crate::data::excel;
@@ -242,7 +242,7 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
     // for each item, retrieve info from mouser / digikey
     for item in order_items {
         println!("Searching for item: {}", item.manufacturer_pn);
-        let mouser_part_opt: Option<mouser_apis::MouserPart> = mouser_apis::search_mouser(
+        let mouser_part_opt: Option<mouser_api_models::MouserPart> = mouser_apis::search_mouser(
             &item.manufacturer,
             &item.manufacturer_pn, 
             item.quantity as u32)

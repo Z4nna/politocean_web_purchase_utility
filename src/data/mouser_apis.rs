@@ -1,65 +1,11 @@
-use serde::{Deserialize, Serialize};
 use dotenvy::dotenv;
 use reqwest::Client;
-
-#[derive(Serialize)]
-struct KeywordSearchRequest {
-    #[serde(rename = "SearchByKeywordRequest")]
-    request: InnerRequest,
-}
-
-#[derive(Serialize)]
-#[allow(non_snake_case)]
-struct InnerRequest {
-    keyword: String,
-    records: u32,
-    startingRecord: u32,
-    searchOptions: String,
-    searchWithYourSignUpLanguage: String,
-}
-
-#[derive(Deserialize, Debug)]
-#[allow(non_snake_case)]
-struct MouserResponse {
-    SearchResults: Option<SearchResults>,
-}
-
-#[derive(Deserialize, Debug)]
-#[allow(non_snake_case)]
-struct SearchResults {
-    Parts: Vec<Part>,
-}
-
-#[derive(Deserialize, Debug)]
-#[allow(non_snake_case)]
-pub struct Part {
-    pub Manufacturer: Option<String>,
-    pub ManufacturerPartNumber: Option<String>,
-    pub Description: Option<String>,
-    pub MouserPartNumber: Option<String>,
-    pub ProductDetailUrl: Option<String>,
-    pub PriceBreaks: Option<Vec<PriceBreak>>,
-    pub Availability: Option<String>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct MouserPart {
-    pub manufacturer: String,
-    pub manufacturer_pn: String,
-    pub description: String,
-    pub mouser_pn: String,
-    pub product_url: String,
-    pub unit_price: f64,
-    pub availability: u32,
-}
-
-#[derive(Deserialize, Debug)]
-#[allow(non_snake_case)]
-pub struct PriceBreak {
-    pub Quantity: u32,
-    pub Price: String,
-    pub Currency: String,
-}
+use crate::models::mouser_api_models::{
+    MouserPart,
+    KeywordSearchRequest,
+    InnerRequest,
+    MouserResponse,
+};
 
 pub async fn search_mouser(
     query_manufacturer: &str,
@@ -76,9 +22,9 @@ pub async fn search_mouser(
         request: InnerRequest {
             keyword: format!("{} {}", query_manufacturer, query_manufacturer_pn).into(),
             records: 0,
-            startingRecord: 0,
-            searchOptions: "".into(),
-            searchWithYourSignUpLanguage: "".into(),
+            starting_record: 0,
+            search_options: "".into(),
+            search_with_your_sign_up_language: "".into(),
         },
     };
     let client = Client::new();
@@ -89,11 +35,11 @@ pub async fn search_mouser(
         .await?
         .json::<MouserResponse>()
         .await?;
-    match response.SearchResults {
+    match response.search_results {
         Some(search_results) => {
-            for part in search_results.Parts {
-                let manufacturer = part.Manufacturer.unwrap_or_default();
-                let manufacturer_pn = part.ManufacturerPartNumber.unwrap_or_default();
+            for part in search_results.parts {
+                let manufacturer = part.manufacturer.unwrap_or_default();
+                let manufacturer_pn = part.manufacturer_part_number.unwrap_or_default();
                 // assure we return only the requested item
                 if manufacturer_pn != query_manufacturer_pn {
                     continue;
@@ -101,10 +47,10 @@ pub async fn search_mouser(
                 let mouser_part = MouserPart {
                     manufacturer: manufacturer,
                     manufacturer_pn: manufacturer_pn,
-                    description: part.Description.unwrap_or_default(),
-                    mouser_pn: part.MouserPartNumber.unwrap_or_default(),
-                    product_url: part.ProductDetailUrl.unwrap_or_default(),
-                    unit_price: match part.PriceBreaks {
+                    description: part.description.unwrap_or_default(),
+                    mouser_pn: part.mouser_part_number.unwrap_or_default(),
+                    product_url: part.product_detail_url.unwrap_or_default(),
+                    unit_price: match part.price_breaks {
                         Some(price_breaks) => {
                             let mut unit_price = 0.0;
                             for price in price_breaks {
@@ -123,7 +69,7 @@ pub async fn search_mouser(
                             return Ok(None);
                         }
                     },
-                    availability: part.Availability
+                    availability: part.availability
                         .clone()
                         .unwrap_or_default()
                         .strip_suffix(" In Stock")
