@@ -232,7 +232,7 @@ pub async fn add_item_to_order(
 pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError> {
     println!("Generating BOM for order {}", order_id);
     // get order info
-    let order = get_order_from_id(order_id, pool).await?;
+    let order: Order = get_order_from_id(order_id, pool).await?;
     let order_items = item::get_items_from_order(order_id, pool).await?;
 
     // create excel files

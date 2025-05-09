@@ -12,19 +12,6 @@ use zip::write::FileOptions;
 use std::{collections::{HashMap, HashSet}, io::Write};
 use std::io::Cursor;
 
-
-#[derive(sqlx::FromRow, Debug, Clone)]
-struct DigiKeyItem {
-    pub quantity: i32,
-    pub digikey_pn: Option<String>,
-}
-
-#[derive(sqlx::FromRow, Debug, Clone)]
-struct MouserItem {
-    pub quantity: i32,
-    pub mouser_pn: Option<String>,
-}
-
 pub async fn edit_order_handler(
     State(app_state): State<AppState>,
     _session: Session,
