@@ -19,5 +19,5 @@ DIGIKEY_CLIENT_SECRET=yourdigikeyclientsecret
 The SQLx migrations are located in the migrations folder.
 To run the migrations, run the following command:
 ```
-DATABASE_URL=yourdatabaseurl sqlx migrate run
+DATABASE_URL=postgres://yourid:yourpwd@yourdbip/yourdbname sqlx migrate run
 ```
