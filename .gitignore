@@ -2,3 +2,4 @@
 target/
 .env
 digikey_response_pretty.json
+mouser_response.json

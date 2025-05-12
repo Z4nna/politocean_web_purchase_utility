@@ -1,11 +1,13 @@
+use std::{fs::File, io::Write};
 use dotenvy::dotenv;
-use reqwest::Client;
+use reqwest::{Client, Response};
 use crate::models::mouser_api_models::{
     MouserPart,
     KeywordSearchRequest,
     InnerRequest,
     MouserResponse,
 };
+use serde_path_to_error::deserialize;
 
 pub async fn search_mouser(
     query_manufacturer: &str,
@@ -28,13 +30,61 @@ pub async fn search_mouser(
         },
     };
     let client = Client::new();
-    let response = client
+    let mut search_response: Response;
+
+    let mut attempts = 0;
+    let max_attempts = 100;
+    loop {
+        search_response = client
         .post(&url)
+        .header("accept", "application/json")
+        .header("Content-Type", "application/json")
         .json(&request_body)
         .send()
-        .await?
-        .json::<MouserResponse>()
         .await?;
+        println!("Sent Mouser search request successfully");
+
+        if !search_response.status().is_success() {
+            println!("Failed to search Mouser: code {:?}", search_response.status());
+        } else {
+            println!("Search successful");
+            break;
+        }
+        if attempts >= max_attempts {
+            break;
+        } else {
+            attempts += 1;
+            println!("Retrying Mouser search, attempt {}", attempts);
+            continue;
+        }
+    }
+
+    let bytes = search_response.bytes().await?;
+
+    let json: serde_json::Value = serde_json::from_slice(&bytes)?;
+
+    // Serialize the JSON with pretty formatting
+    let pretty = serde_json::to_string_pretty(&json)?;
+
+    // Write to a file
+    let mut file = File::create("mouser_response.json")?;
+    file.write_all(pretty.as_bytes())?;
+
+    let response: MouserResponse;
+
+    let mut de = serde_json::Deserializer::from_slice(&bytes);
+    match deserialize::<_, MouserResponse>(&mut de) {
+        Ok(result) => {
+            response = result;
+        },
+        Err(e) => {
+            println!("❌ Path error: {}", e);
+            // return Err(format!("Error parsing JSON: {}", e).into());
+            return Box::pin(search_mouser(query_manufacturer, query_manufacturer_pn, quantity)).await;
+        }
+    };
+    println!("Response parsed");
+
     match response.search_results {
         Some(search_results) => {
             for part in search_results.parts {

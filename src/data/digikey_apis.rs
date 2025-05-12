@@ -10,7 +10,6 @@ use crate::models::digikey_api_models::{
     DigiKeySearchResult,
     Product
 };
-
 use serde_path_to_error::deserialize;
 
 async fn digikey_get_token() -> Result<String, Box<dyn std::error::Error>> {
@@ -74,10 +73,9 @@ pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &st
     println!("Sent digikey search request successfully");
 
     if !search_response.status().is_success() {
-        return Err(format!("Failed to search DigiKey: {:?}", search_response.status()).into());
+        return Err(format!("Failed to search DigiKey: code {:?}", search_response.status()).into());
     }
     println!("Search successful");
-
 
     let bytes = search_response.bytes().await?;
 
