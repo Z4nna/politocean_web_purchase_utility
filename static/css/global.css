@@ -1,13 +1,14 @@
-/* --- Color Palette --- */
+/* --- Custom Ocean-Inspired Color Palette --- */
 :root {
-    --primary-color: #0077b6;      /* deep ocean blue */
-    --secondary-color: #00b4d8;    /* lighter cyan */
-    --accent-color: #90e0ef;       /* soft turquoise */
-    --background-color: #f0faff;   /* very light blue */
-    --text-color: #0a0a0a;
-    --muted-text: #4a4a4a;
-    --border-color: #d0eaff;
-    --danger-color: #ff6b6b;
+    --primary-color: #16679C;        /* Lapis */
+    --secondary-color: #38A3A5;      /* Verdigris */
+    --accent-color: #5ac3b0;         /* Light Green */
+    --timberwolf-color: #E5DCDC;     /* Timberwolf */
+    --background-color: #edf7f6;     /* White */
+    --text-color: #0A0A0A;
+    --muted-text: #773344;           /* Wine (muted emphasis) */
+    --border-color: #1E7A89;         /* Ice Blue */
+    --danger-color: #E85F5C;         /* Indian Red */
 }
 
 /* --- Global Resets --- */
@@ -33,7 +34,7 @@ h1, h2, h3 {
 
 p {
     margin-bottom: 1rem;
-    color: var(--muted-text);
+    color: var(--text-color);
 }
 
 /* --- Forms --- */
@@ -41,7 +42,7 @@ form {
     background-color: white;
     padding: 2rem;
     border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0, 119, 182, 0.1);
+    box-shadow: 0 4px 10px rgba(22, 103, 156, 0.1); /* lapis shadow */
     margin-bottom: 2rem;
 }
 
@@ -133,7 +134,7 @@ button.remove-button {
     background-color: white;
     border-radius: 12px;
     padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0, 119, 182, 0.1);
+    box-shadow: 0 2px 8px rgba(22, 103, 156, 0.1);
     margin-bottom: 1rem;
 }
 

@@ -1,16 +1,16 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f4f9;
+    background-color: var(--background-color);
     margin: 0;
     padding: 2rem;
-    color: #333;
+    color: var(--text-color);
 }
 
 h1 {
     text-align: center;
     margin-bottom: 2rem;
     font-size: 2rem;
-    color: #2c3e50;
+    color: var(--primary-color);
 }
 
 table {
@@ -24,7 +24,7 @@ table {
 }
 
 thead {
-    background-color: #0077b6; /* ocean blue */
+    background-color: var(--primary-color);
     color: white;
 }
 
@@ -32,7 +32,7 @@ th, td {
     padding: 0.75rem 1rem;
     text-align: center;
     border-bottom: 1px solid #ddd;
-    border-right: 1px solid #e0e0e0;
+    border-right: 1px solid var(--border-color);
 }
 
 th:last-child,
@@ -41,7 +41,7 @@ td:last-child {
 }
 
 tbody > tr:hover {
-    background-color: #d6f1ff; /* soft water blue */
+    background-color: var(--accent-color);
 }
 
 .status-cell {
@@ -68,7 +68,7 @@ form.inline-form {
 .inline-form button {
     all: unset;
     font-family: inherit;
-    background-color: #4CAF50;
+    background-color: var(--secondary-color);
     color: white;
     padding: 8px 12px;
     font-size: 0.9rem;
@@ -81,12 +81,12 @@ form.inline-form {
 }
 
 .inline-form button:hover {
-    background-color: steelblue;
+    background-color: var(--primary-color);
     color: white;
 }
 
 .inline-form .remove-button {
-    background-color: #e74c3c;
+    background-color: var(--danger-color);
 }
 
 .inline-form .remove-button:hover {
@@ -98,7 +98,7 @@ form.inline-form {
 }
 
 .button {
-    background-color: #4CAF50;
+    background-color: var(--secondary-color);
     border: none;
     color: white;
     padding: 8px 12px;
@@ -112,12 +112,12 @@ form.inline-form {
 }
 
 .button:hover {
-    background-color: steelblue;
+    background-color: var(--primary-color);
     color: white;
 }
 
 .remove-button {
-    background-color: #e74c3c;
+    background-color: var(--danger-color);
 }
 
 .remove-button:hover {

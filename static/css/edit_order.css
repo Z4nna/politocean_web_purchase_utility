@@ -1,7 +1,8 @@
 .order-form {
-    max-width: 70%;
+    max-width: 100%;
+    width: 70%;
     margin: 0 auto;
-    background: #ffffff;
+    background: rgba(56, 163, 165, 0.1);  /* secondary color with 0.2 opacity */
     padding: 2rem;
     border-radius: 12px;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
@@ -16,27 +17,28 @@
 label {
     font-weight: 600;
     margin-bottom: 0.25rem;
-    color: #2c3e50;
+    color: var(--text-color);
 }
 
 input[type="text"] {
     padding: 0.5rem 0.75rem;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     font-size: 1rem;
-    background-color: #f9f9ff;
+    background-color: #ffffff;
+    color: var(--text-color);
 }
 
 .page-title {
     text-align: center;
     font-size: 2rem;
-    color: #2c3e50;
+    color: var(--primary-color);
     margin-bottom: 2rem;
 }
 
 .section-title {
     font-size: 1.2rem;
-    color: #2980b9;
+    color: var(--primary-color);
     margin-top: 2rem;
     margin-bottom: 1rem;
     text-align: center;
@@ -45,17 +47,36 @@ input[type="text"] {
 .order-info {
     margin-bottom: 1rem;
     font-size: 1rem;
-    color: #34495e;
+    color: var(--muted-text);
 }
 
 .add-button {
-    background-color: #27ae60;
+    background-color: var(--secondary-color);
+    color: white;
     margin-top: 1rem;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.add-button:hover {
+    background-color: var(--border-color);
+    color: var(--text-color);
 }
 
 .submit-button {
-    background-color: #3498db;
+    background-color: var(--primary-color);
+    color: white;
     margin-top: 1rem;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.submit-button:hover {
+    background-color: var(--secondary-color);
 }
 
 .actions {
@@ -67,11 +88,17 @@ input[type="text"] {
 }
 
 .secondary-button {
-    background-color: #2980b9;
+    background-color: var(--secondary-color);
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
 }
 
 .secondary-button:hover {
-    background-color: steelblue;
+    background-color: var(--accent-color);
+    color: var(--text-color);
 }
 
 form.inline-form {
@@ -96,13 +123,13 @@ form.inline-form {
     grid-template-columns: 1fr 1fr 1fr 1fr 0.7fr auto;
     gap: 10px;
     align-items: center;
-    padding: 10px;
+    padding: 5px;
     border-radius: 5px;
 }
 
 .item-entry {
-    background-color: #f4f4f4;
-    border: 1px solid #ddd;
+    background-color: var(--background-color);
+    border: 1px transparent var(--border-color);
 }
 
 .item-entry input {
@@ -111,13 +138,14 @@ form.inline-form {
 
 .header-row {
     font-weight: bold;
-    background-color: #e3e3e3;
-    border-bottom: 2px solid #bbb;
+    background-color: var(--primary-color);
+    color: white;
+    border-bottom: 3px solid var(--border-color);
 }
 
 .delete-button {
-    background-color: #ff4d4d;
-    color: white;
+    background-color: var(--danger-color);
+    color: 9CFFFA;
     font-size: 14px;
     padding: 5px 10px;
     border: none;
@@ -134,10 +162,6 @@ form.inline-form {
 .item-input-fields {
     overflow-x: auto;
     white-space: nowrap;
-}
-
-.header-row {
-    font-weight: bold;
 }
 
 /* COFFEE CUP ANIMATION */

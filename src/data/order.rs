@@ -37,11 +37,11 @@ impl Order {
     }
     pub fn get_bg_color(&self) -> &str {
         if self.confirmed {
-          " #4CAF50"
+          " #ACF39D"
         } else if self.ready {
             " #FFC107"
         } else {
-            " #F44336"
+            " #E85F5C"
         }
     }
 }

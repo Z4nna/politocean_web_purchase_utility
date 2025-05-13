@@ -1,141 +1,35 @@
-.order-form {
-    max-width: 70%;
-    margin: 0 auto;
-    background: #ffffff;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-}
-
-.form-row {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 1.2rem;
-}
-
-label {
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-    color: #2c3e50;
-}
-
-input[type="text"] {
+.file-input {
+    display: block;
     padding: 0.5rem 0.75rem;
-    border: 1px solid #ccc;
+    border: 2px dashed var(--border-color);
     border-radius: 6px;
+    background-color: var(--background-color);
+    color: var(--text-color);
     font-size: 1rem;
-    background-color: #f9f9ff;
-}
-
-.page-title {
-    text-align: center;
-    font-size: 2rem;
-    color: #2c3e50;
-    margin-bottom: 2rem;
-}
-
-.section-title {
-    font-size: 1.2rem;
-    color: #2980b9;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-    text-align: center;
-}
-
-.order-info {
-    margin-bottom: 1rem;
-    font-size: 1rem;
-    color: #34495e;
-}
-
-.add-button {
-    background-color: #27ae60;
-    margin-top: 1rem;
-}
-
-.submit-button {
-    background-color: #3498db;
-    margin-top: 1rem;
-}
-
-.actions {
-    margin-top: 2rem;
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
-.secondary-button {
-    background-color: #2980b9;
-}
-
-.secondary-button:hover {
-    background-color: steelblue;
-}
-
-form.inline-form {
-    display: inline;
-    margin: 0;
-    padding: 0;
-    border: none;
-    background: none;
-}
-
-#items-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-    overflow-x: auto;
-}
-
-.item-entry,
-.header-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 0.7fr auto;
-    gap: 10px;
-    align-items: center;
-    padding: 10px;
-    border-radius: 5px;
-}
-
-.item-entry {
-    background-color: #f4f4f4;
-    border: 1px solid #ddd;
-}
-
-.item-entry input {
-    margin: auto;
-}
-
-.header-row {
-    font-weight: bold;
-    background-color: #e3e3e3;
-    border-bottom: 2px solid #bbb;
-}
-
-.delete-button {
-    background-color: #ff4d4d;
-    color: white;
-    font-size: 14px;
-    padding: 5px 10px;
-    border: none;
-    border-radius: 4px;
     cursor: pointer;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    margin-top: 0.5rem;
+    width: 100%;
+}
+
+.file-input:hover {
+    background-color: rgba(56, 163, 165, 0.1); /* subtle secondary tint */
+    border-color: var(--accent-color);
+}
+
+.file-input::file-selector-button {
+    background-color: var(--secondary-color);
+    color: white;
+    padding: 0.4rem 1rem;
+    border: none;
+    border-radius: 6px;
+    margin-right: 1rem;
+    cursor: pointer;
+    font-weight: 600;
     transition: background-color 0.3s ease;
-    margin: auto;
 }
 
-.item-entry .delete-button:hover {
-    background-color: #c0392b;
-}
-
-.item-input-fields {
-    overflow-x: auto; /* Enable horizontal scrolling if the content overflows */
-    white-space: nowrap; /* Prevent wrapping of text, keeping it in a single line */
-}
-
-.header-row {
-    font-weight: bold;
+.file-input::file-selector-button:hover {
+    background-color: var(--border-color);
+    color: var(--text-color);
 }
