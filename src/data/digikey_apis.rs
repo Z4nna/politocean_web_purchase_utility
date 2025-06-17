@@ -1,5 +1,5 @@
 use reqwest::Client;
-use std::{fs::File, io::Write};
+use std::{fs::File, io::Write, time::Duration};
 use dotenvy::dotenv;
 use crate::models::digikey_api_models::{
     TokenResponse,
@@ -68,6 +68,7 @@ pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &st
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", token))
         .json(&request_body)
+        .timeout(Duration::from_secs(10))
         .send()
         .await?;
     println!("Sent digikey search request successfully");
