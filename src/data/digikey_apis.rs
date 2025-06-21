@@ -1,5 +1,5 @@
 use reqwest::Client;
-use std::{fs::File, io::Write};
+use std::{fs::File, io::Write, time::Duration};
 use dotenvy::dotenv;
 use crate::models::digikey_api_models::{
     TokenResponse,
