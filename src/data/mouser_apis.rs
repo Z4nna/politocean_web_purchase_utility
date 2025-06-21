@@ -1,4 +1,4 @@
-use std::{fs::File, io::Write};
+use std::{fs::File, io::Write, time::Duration};
 use dotenvy::dotenv;
 use reqwest::{Client, Response};
 use crate::models::mouser_api_models::{
@@ -40,6 +40,7 @@ pub async fn search_mouser(
         .header("accept", "application/json")
         .header("Content-Type", "application/json")
         .json(&request_body)
+        .timeout(Duration::from_secs(10))
         .send()
         .await?;
         println!("Sent Mouser search request successfully");
