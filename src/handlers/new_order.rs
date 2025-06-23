@@ -1,5 +1,5 @@
 use std::collections::{HashSet, HashMap};
-use crate::{data::{errors::{AppError, DataError}, excel}, models::{app, templates::NewOrderTemplate}};
+use crate::{data::{errors::{DataError}, excel}, models::{templates::NewOrderTemplate}};
 use askama::Template;
 use crate::{
     models::app::AppState,
@@ -12,7 +12,7 @@ use tower_sessions::Session;
 
 pub async fn new_order_handler(
     State(app_state): State<AppState>,
-    session: Session,
+    _session: Session,
 ) -> Result<Response, errors::AppError> {
     
     let (areas, sub_areas): (Vec<String>, Vec<String>) = sqlx::query!("SELECT division, sub_area FROM areas")

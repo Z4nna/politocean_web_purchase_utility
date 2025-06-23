@@ -49,7 +49,7 @@ impl Order {
 pub async fn get_order_from_author_id(author_id: i32, pool: &PgPool) -> Result<Vec<Order>, DataError> {
     let user_orders = sqlx::query_as!(
         Order,
-        "SELECT * FROM orders WHERE author_id = $1 ORDER BY date DESC",
+        "SELECT * FROM orders WHERE author_id = $1 ORDER BY date DESC, id DESC",
         author_id
     )
     .fetch_all(pool)
@@ -61,7 +61,7 @@ pub async fn get_order_from_author_id(author_id: i32, pool: &PgPool) -> Result<V
 pub async fn get_ready_orders(pool: &PgPool) -> Result<Vec<Order>, DataError> {
     let user_orders = sqlx::query_as!(
         Order,
-        "SELECT * FROM orders WHERE ready = true ORDER BY date DESC"
+        "SELECT * FROM orders WHERE ready = true ORDER BY date DESC, id DESC"
     )
     .fetch_all(pool)
     .await
@@ -72,7 +72,7 @@ pub async fn get_ready_orders(pool: &PgPool) -> Result<Vec<Order>, DataError> {
 pub async fn get_confirmed_orders(pool: &PgPool) -> Result<Vec<Order>, DataError> {
     let user_orders = sqlx::query_as!(
         Order,
-        "SELECT * FROM orders WHERE confirmed = true ORDER BY date DESC"
+        "SELECT * FROM orders WHERE confirmed = true ORDER BY date DESC, id DESC"
     )
     .fetch_all(pool)
     .await
@@ -83,7 +83,7 @@ pub async fn get_confirmed_orders(pool: &PgPool) -> Result<Vec<Order>, DataError
 pub async fn get_order_from_id(order_id: i32, pool: &PgPool) -> Result<Order, DataError> {
     let user_orders = sqlx::query_as!(
         Order,
-        "SELECT * FROM orders WHERE id = $1 ORDER BY date DESC",
+        "SELECT * FROM orders WHERE id = $1",
         order_id
     )
     .fetch_one(pool)
