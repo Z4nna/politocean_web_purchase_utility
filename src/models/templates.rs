@@ -4,7 +4,10 @@ use crate::{data::order::Order,models::item::OrderItem};
 #[derive(Template)]
 #[template(path = "pages/new_order.html")]
 pub struct NewOrderTemplate {
-
+    pub areas: Vec<String>,
+    pub sub_areas: Vec<String>,
+    pub proposals: Vec<String>,
+    pub projects: Vec<String>
 }
 
 #[derive(Template)]

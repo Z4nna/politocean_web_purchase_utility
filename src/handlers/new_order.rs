@@ -1,5 +1,5 @@
 use std::collections::{HashSet, HashMap};
-use crate::{data::excel, models::templates::NewOrderTemplate};
+use crate::{data::{errors::{AppError, DataError}, excel}, models::{app, templates::NewOrderTemplate}};
 use askama::Template;
 use crate::{
     models::app::AppState,
@@ -10,9 +10,44 @@ use axum::{
 };
 use tower_sessions::Session;
 
-pub async fn new_order_handler() -> impl IntoResponse {
-    let html_string = NewOrderTemplate{}.render().unwrap();
-    Html(html_string).into_response()
+pub async fn new_order_handler(
+    State(app_state): State<AppState>,
+    session: Session,
+) -> Result<Response, errors::AppError> {
+    
+    let (areas, sub_areas): (Vec<String>, Vec<String>) = sqlx::query!("SELECT division, sub_area FROM areas")
+    .fetch_all(&app_state.connection_pool)
+    .await
+    .map_err(|e| DataError::Query(e))?
+    .into_iter()
+    .map(|r| (r.division, r.sub_area))
+    .unzip();
+
+    let proposals = sqlx::query!("SELECT name FROM proposals")
+    .fetch_all(&app_state.connection_pool)
+    .await
+    .map_err(|e| DataError::Query(e))?
+    .into_iter()
+    .map(|r| r.name)
+    .collect();
+
+    let projects = sqlx::query!("SELECT name FROM projects")
+    .fetch_all(&app_state.connection_pool)
+    .await
+    .map_err(|e| DataError::Query(e))?
+    .into_iter()
+    .map(|r| r.name)
+    .collect();
+
+
+    let html_string = NewOrderTemplate{
+        areas: HashSet::<String>::from_iter(areas).into_iter().collect(),
+        sub_areas: HashSet::<String>::from_iter(sub_areas).into_iter().collect(),
+        proposals: proposals,
+        projects: projects,
+    }.render().unwrap();
+
+    Ok(Html(html_string).into_response())
 }
 
 pub async fn submit_order_handler(

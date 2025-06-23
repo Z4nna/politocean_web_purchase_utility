@@ -17,12 +17,20 @@
 
         <div class="form-row">
             <label for="area_division">Divisione:</label>
-            <input type="text" id="area_division" name="area_division" required>
+            <select name="area_division" id="area_division" required>
+                {% for area in areas %}
+                <option value="{{area}}">{{area}}</option>
+                {% endfor %}
+            </select>
         </div>
 
         <div class="form-row">
             <label for="area_sub_area">Sub-area:</label>
-            <input type="text" id="area_sub_area" name="area_sub_area" required>
+            <select name="area_sub_area" id="area_sub_area" required>
+                {% for sub_area in sub_areas %}
+                <option value="{{sub_area}}">{{sub_area}}</option>
+                {% endfor %}
+            </select>
         </div>
 
         <h3 class="section-title">Articoli</h3>
@@ -48,7 +56,7 @@
     <p>La prima colonna dell'excel deve essere la quantità (quantità < 1 verranno ignorate), 
         la seconda colonna il nome del produttore (nomi nulli verranno ignorati),
         la terza colonna il part number del prodotto (P.N. nulli verranno ignorati).
-        La prima riga è considerata la riga di intestazione.
+        La prima riga è considerata la riga di intestazione, pertanto verrà ignorata.
     </p>
     <form action="/orders/new/upload-kicad-bom" method="post" enctype="multipart/form-data" class="order-form">
         <div class="form-row">
@@ -58,28 +66,43 @@
 
         <div class="form-row">
             <label for="area_division">Divisione:</label>
-            <input type="text" id="area_division" name="area_division" required>
+            <select name="area_division" id="area_division" required>
+                {% for area in areas %}
+                <option value="{{area}}">{{area}}</option>
+                {% endfor %}
+            </select>
         </div>
 
         <div class="form-row">
             <label for="area_sub_area">Sub-area:</label>
-            <input type="text" id="area_sub_area" name="area_sub_area" required>
+            <select name="area_sub_area" id="area_sub_area" required>
+                {% for sub_area in sub_areas %}
+                <option value="{{sub_area}}">{{sub_area}}</option>
+                {% endfor %}
+            </select>
         </div>
 
         <div class="form-row">
             <label for="proposal">Proposal:</label>
-            <input type="text" id="proposal" name="proposal" required>
+            <select name="proposal" id="proposal" required>
+                {% for proposal in proposals %}
+                <option value="{{proposal}}">{{proposal}}</option>
+                {% endfor %}
+            </select>
         </div>
 
         <div class="form-row">
             <label for="project">Project:</label>
-            <input type="text" id="project" name="project" required>
+            <select name="project" id="project" required>
+                {% for project in projects %}
+                <option value="{{project}}">{{project}}</option>
+                {% endfor %}
+            </select>
         </div>
 
         <input type="file" name="file" class="file-input" accept=".xlsx">
         <button type="submit">Upload</button>
     </form>
-
     <script src="/static/js/new_order.js"></script>
 </body>
 </html>
