@@ -47,7 +47,7 @@ tbody > tr:hover {
 
 .status-cell {
     font-weight: bold;
-    color: white;
+    color: var(--text);
     border-radius: 6px;
 }
 
@@ -83,7 +83,7 @@ form.inline-form {
 
 .inline-form button:hover {
     background-color: var(--success);
-    color: white;
+    color: var(--text);
 }
 
 .inline-form .remove-button {
@@ -101,7 +101,7 @@ form.inline-form {
 .button {
     background-color: var(--primary);
     border: none;
-    color: white;
+    color: var(--text);
     padding: 8px 12px;
     text-align: center;
     text-decoration: none;
@@ -114,7 +114,7 @@ form.inline-form {
 
 .button:hover {
     background-color: var(--highlight);
-    color: white;
+    color: var(--text);
 }
 
 .remove-button {
