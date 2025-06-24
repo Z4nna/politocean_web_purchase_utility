@@ -1,7 +1,7 @@
 use askama::Template;
 use umya_spreadsheet::Spreadsheet;
 use crate::{
-    data::{errors, item, order, user}, models::{app::AppState, templates::EditOrderTemplate}
+    data::{errors::{self, DataError}, item, order, user}, models::{app::AppState, templates::EditOrderTemplate}
 };
 use axum::{
     body::Body, extract::{Path, State}, http::{header, HeaderValue, StatusCode}, response::{Html, IntoResponse, Redirect, Response}, Form
@@ -16,10 +16,38 @@ pub async fn edit_order_handler(
     State(app_state): State<AppState>,
     _session: Session,
     Path(order_id): Path<i32>,
-) -> Result<Response, errors::AppError>{
+) -> Result<Response, errors::AppError> {
+    let (areas, sub_areas): (Vec<String>, Vec<String>) = sqlx::query!("SELECT division, sub_area FROM areas")
+    .fetch_all(&app_state.connection_pool)
+    .await
+    .map_err(|e| DataError::Query(e))?
+    .into_iter()
+    .map(|r| (r.division, r.sub_area))
+    .unzip();
+
+    let proposals = sqlx::query!("SELECT name FROM proposals")
+    .fetch_all(&app_state.connection_pool)
+    .await
+    .map_err(|e| DataError::Query(e))?
+    .into_iter()
+    .map(|r| r.name)
+    .collect();
+
+    let projects = sqlx::query!("SELECT name FROM projects")
+    .fetch_all(&app_state.connection_pool)
+    .await
+    .map_err(|e| DataError::Query(e))?
+    .into_iter()
+    .map(|r| r.name)
+    .collect();
+
     let html_string = EditOrderTemplate{
         order: order::get_order_from_id(order_id, &app_state.connection_pool).await?,
         items: item::get_items_from_order(order_id, &app_state.connection_pool).await?,
+        areas: HashSet::<String>::from_iter(areas).into_iter().collect(),
+        sub_areas: HashSet::<String>::from_iter(sub_areas).into_iter().collect(),
+        proposals: proposals,
+        projects: projects,
     }.render().unwrap();
     Ok(Html(html_string).into_response())
 }

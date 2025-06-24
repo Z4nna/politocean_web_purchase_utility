@@ -26,12 +26,20 @@
 
         <div class="form-row">
             <label for="area_division">Divisione:</label>
-            <input type="text" id="area_division" name="area_division" value="{{ order.area_division }}">
+            <select name="area_division" id="area_division" required>
+                {% for area in areas %}
+                <option value="{{area}}" {% if area == order.area_division.as_str() %}selected{% endif %}>{{area}}</option>
+                {% endfor %}
+            </select>
         </div>
 
         <div class="form-row">
             <label for="area_sub_area">Sub-area:</label>
-            <input type="text" id="area_sub_area" name="area_sub_area" value="{{ order.area_sub_area }}">
+            <select name="area_sub_area" id="area_sub_area" required>
+                {% for sub_area in sub_areas %}
+                <option value="{{sub_area}}" {% if sub_area == order.area_sub_area.as_str() %}selected{% endif %}>{{sub_area}}</option>
+                {% endfor %}
+            </select>
         </div>
 
         <p class="order-info"><strong>Stato:</strong>

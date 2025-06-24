@@ -27,6 +27,10 @@ pub struct AdvisorHomepageTemplate {
 pub struct EditOrderTemplate {
     pub order: Order,
     pub items: Vec<OrderItem>,
+    pub areas: Vec<String>,
+    pub sub_areas: Vec<String>,
+    pub proposals: Vec<String>,
+    pub projects: Vec<String>,
 }
 
 #[derive(Template)]
