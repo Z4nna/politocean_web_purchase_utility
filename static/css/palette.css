@@ -1,0 +1,166 @@
+:root {
+    --bg-dark: oklch(0.1 0.06 214);
+    --bg: oklch(21.975% 0.0499 239.482 / 0.898);
+    --text: oklch(97.276% 0.02199 197.076);
+    --text-muted: oklch(0.76 0.1 214);
+    --highlight: oklch(0.5 0.12 214);
+    --border: oklch(0.4 0.12 214);
+    --border-muted: oklch(0.3 0.12 214);
+    --primary: oklch(0.76 0.12 214);
+    --secondary: oklch(0.76 0.12 34);
+    --danger: oklch(67.181% 0.14579 30.529);
+    --warning: oklch(88.994% 0.17651 104.892 / 0.689);
+    --success: oklch(0.7 0.12 160);
+    --info: oklch(0.7 0.12 260);
+}
+
+:root[data-theme="light"] {
+   --bg-dark: oklch(0.92 0.01 214);
+    --bg: oklch(0.96 0.01 214);
+    --bg-light: oklch(1 0.01 214);
+    --text: oklch(0.15 0.02 214);
+    --text-muted: #773344;
+    --highlight: #38A3A5;
+    --border: #1E7A89;
+    --border-muted: oklch(0.7 0.02 214);
+    --primary: #16679C;
+    --secondary: #38A3A5;
+    --danger: #E85F5C;
+    --warning: oklch(80.999% 0.13777 99.162);
+    --success: #64d874;
+    --info: oklch(0.5 0.05 260);
+}
+
+/* --- Global Resets --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+}
+
+/* --- Typography --- */
+h1, h2, h3 {
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+p {
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+}
+
+/* --- Forms --- */
+form {
+    background-color: var(--bg);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(22, 103, 156, 0.1); /* lapis shadow */
+    margin-bottom: 2rem;
+}
+
+label {
+    font-weight: 600;
+    margin-top: 1rem;
+    display: block;
+    color: var(--text);
+}
+
+input[type="text"],
+input[type="number"],
+select {
+    background-color: var(--bg);
+    width: 100%;
+    padding: 0.6rem;
+    margin-top: 0.3rem;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+    color: var(--text)
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--primary);
+    outline: none;
+}
+
+/* --- Buttons --- */
+button,
+.button {
+    display: inline-block;
+    padding: 0.6rem 1.2rem;
+    background-color: var(--primary);
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+}
+
+button:hover,
+.button:hover {
+    background-color: var(--secondary);
+}
+
+/* Danger / Delete Buttons */
+button.remove-button {
+    background-color: var(--danger);
+    padding: 0.3rem 0.8rem;
+    font-size: 1.1rem;
+    margin-left: 1rem;
+    border-radius: 50%;
+}
+
+/* --- Utility Classes --- */
+.flex {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.space-between {
+    justify-content: space-between;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.mt-1 { margin-top: 1rem; }
+.mt-2 { margin-top: 2rem; }
+
+.mb-1 { margin-bottom: 1rem; }
+.mb-2 { margin-bottom: 2rem; }
+
+/* --- Cards / Containers --- */
+.card {
+    background-color: var(--bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(22, 103, 156, 0.1);
+    margin-bottom: 1rem;
+}
+
+hr {
+    border: none;
+    height: 1px;
+    background-color: var(--border);
+    margin: 2rem 0;
+}

@@ -1,38 +1,39 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--background-color);
+    background-color: var(--bg-dark);
     margin: 0;
     padding: 2rem;
-    color: var(--text-color);
+    color: var(--text);
 }
 
 h1 {
     text-align: center;
     margin-bottom: 2rem;
     font-size: 2rem;
-    color: var(--primary-color);
+    color: var(--primary);
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 2rem;
-    background: white;
+    background: var(--bg);
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    border: 3px solid var(--border-muted);
 }
 
 thead {
-    background-color: var(--primary-color);
-    color: white;
+    background-color: var(--bg);
+    color: var(--text);
 }
 
 th, td {
     padding: 0.75rem 1rem;
     text-align: center;
-    border-bottom: 1px solid #ddd;
-    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-muted);
+    border-right: 1px solid var(--border-muted);
 }
 
 th:last-child,
@@ -41,7 +42,7 @@ td:last-child {
 }
 
 tbody > tr:hover {
-    background-color: var(--accent-color);
+    background-color: var(--highlight);
 }
 
 .status-cell {
@@ -68,8 +69,8 @@ form.inline-form {
 .inline-form button {
     all: unset;
     font-family: inherit;
-    background-color: var(--secondary-color);
-    color: white;
+    background-color: var(--primary);
+    color: var(--text);
     padding: 8px 12px;
     font-size: 0.9rem;
     border-radius: 4px;
@@ -81,16 +82,16 @@ form.inline-form {
 }
 
 .inline-form button:hover {
-    background-color: var(--primary-color);
+    background-color: var(--success);
     color: white;
 }
 
 .inline-form .remove-button {
-    background-color: var(--danger-color);
+    background-color: var(--warning);
 }
 
 .inline-form .remove-button:hover {
-    background-color: #c0392b;
+    background-color: var(--danger);
 }
 
 .button, .inline-form button {
@@ -98,7 +99,7 @@ form.inline-form {
 }
 
 .button {
-    background-color: var(--secondary-color);
+    background-color: var(--primary);
     border: none;
     color: white;
     padding: 8px 12px;
@@ -112,16 +113,16 @@ form.inline-form {
 }
 
 .button:hover {
-    background-color: var(--primary-color);
+    background-color: var(--highlight);
     color: white;
 }
 
 .remove-button {
-    background-color: var(--danger-color);
+    background-color: var(--secondary);
 }
 
 .remove-button:hover {
-    background-color: #c0392b;
+    background-color: var(--danger);
 }
 
 .new-order-button {

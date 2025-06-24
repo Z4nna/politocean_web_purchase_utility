@@ -2,7 +2,15 @@
 <html>
 <head>
     <title>Ordini</title>
-    <link rel="stylesheet" href="/static/css/global.css" />
+    <script>
+        const theme = localStorage.getItem("theme");
+        if (theme === "light") {
+            document.documentElement.setAttribute("data-theme", "light");
+        } else {
+            document.documentElement.setAttribute("data-theme", "dark");
+        }
+    </script>
+    <link rel="stylesheet" href="/static/css/palette.css" />
     <link rel="stylesheet" href="/static/css/advisors_homepage.css" />
 </head>
 <body>

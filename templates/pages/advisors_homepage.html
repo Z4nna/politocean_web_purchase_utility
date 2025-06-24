@@ -2,8 +2,17 @@
 <html>
 <head>
     <title>Ordini</title>
-    <link rel="stylesheet" href="/static/css/global.css" />
+    <script>
+        const theme = localStorage.getItem("theme");
+        if (theme === "light") {
+            document.documentElement.setAttribute("data-theme", "light");
+        } else {
+            document.documentElement.setAttribute("data-theme", "dark");
+        }
+    </script>
+    <link rel="stylesheet" href="/static/css/palette.css" />
     <link rel="stylesheet" href="/static/css/advisors_homepage.css" />
+    
 </head>
 <body>
     <div class="container">
@@ -63,6 +72,22 @@
         <div>
             <a href="/board/home" class="button">Board reserved area access</a>
         </div>
+        <div>
+            <button onclick="toggleTheme()">Toggle Theme</button>
+        </div>
+        <script>
+            function toggleTheme() {
+                const html = document.documentElement;
+                const isLight = html.getAttribute("data-theme") === "light";
+                if (isLight) {
+                    html.removeAttribute("data-theme"); // dark theme
+                    localStorage.setItem("theme", "dark");
+                } else {
+                    html.setAttribute("data-theme", "light");
+                    localStorage.setItem("theme", "light");
+                }
+            }
+        </script>
 
     </div>
 </body>

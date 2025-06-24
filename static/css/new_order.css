@@ -1,10 +1,10 @@
 .file-input {
     display: block;
     padding: 0.5rem 0.75rem;
-    border: 2px dashed var(--border-color);
+    border: 2px dashed var(--border);
     border-radius: 6px;
-    background-color: var(--background-color);
-    color: var(--text-color);
+    background-color: var(--bg-dark);
+    color: var(--text);
     font-size: 1rem;
     cursor: pointer;
     transition: background-color 0.3s ease, border-color 0.3s ease;
@@ -14,12 +14,12 @@
 
 .file-input:hover {
     background-color: rgba(56, 163, 165, 0.1); /* subtle secondary tint */
-    border-color: var(--accent-color);
+    border-color: var(--highlight);
 }
 
 .file-input::file-selector-button {
-    background-color: var(--secondary-color);
-    color: white;
+    background-color: var(--primary);
+    color: var(--text);
     padding: 0.4rem 1rem;
     border: none;
     border-radius: 6px;
@@ -30,6 +30,10 @@
 }
 
 .file-input::file-selector-button:hover {
-    background-color: var(--border-color);
-    color: var(--text-color);
+    background-color: var(--border);
+    color: var(--text);
+}
+
+button[type="submit"]:hover {
+    background-color: var(--success);
 }
