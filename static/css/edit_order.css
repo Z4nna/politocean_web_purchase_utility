@@ -170,7 +170,7 @@ form.inline-form {
     display: none;
     position: fixed;
     inset: 0;
-    background-color: rgba(255, 255, 255, 0.85);
+    background-color: hsla(0, 0%, 0%, 0.046);
     z-index: 9999;
     justify-content: center;
     align-items: center;

@@ -40,7 +40,7 @@ pub async fn search_mouser(
         .header("accept", "application/json")
         .header("Content-Type", "application/json")
         .json(&request_body)
-        .timeout(Duration::from_secs(10))
+        .timeout(Duration::from_secs(100))
         .send()
         .await?;
         println!("Sent Mouser search request successfully");
