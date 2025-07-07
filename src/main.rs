@@ -1,5 +1,8 @@
 use std::net::SocketAddr;
 use politocean_backend::{routes, init, models::app};
+use std::collections::HashMap;
+use tokio::sync::Mutex;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() {
@@ -18,7 +21,8 @@ async fn main() {
         current_user: app::CurrentUser {
             is_authenticated: false,
             user_id: None,
-        }
+        },
+        bom_jobs: Arc::new(Mutex::new(HashMap::new())),
     };
 
     println!("Server running on {addr:?}");

@@ -44,3 +44,9 @@ pub struct BoardHomepageTemplate {
 pub struct ProfHomepageTemplate {
     pub orders: Vec<Order>,
 }
+
+#[derive(Template)]
+#[template(path = "pages/coffee.html")]
+pub struct CoffeePageTemplate {
+    pub order_id: i32,
+}

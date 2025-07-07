@@ -46,5 +46,7 @@ fn orders_routes() -> Router<app::AppState> {
         .route("/orders/:id/confirm", post(edit_order::mark_order_confirmed_handler))
         .route("/orders/:id/unconfirm", post(edit_order::mark_order_unconfirmed_handler))
         .route("/orders/:id/delete", post(edit_order::delete_order_handler))
+        .route("/orders/:id/coffee", get(edit_order::coffee_page_handler))
+        .route("/orders/:id/get_bom_gen_status", get(edit_order::get_generate_bom_job_status_handler))
         .route_layer(middleware::from_fn(middlewares::auth::required_authentication)) // require authentication
 }

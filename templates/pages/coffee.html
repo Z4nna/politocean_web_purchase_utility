@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generating the BOM</title>
+
+    <link rel="stylesheet" href="/static/css/coffee.css" />
+</head>
+<body>
+    <div id="loading-container">
+        <div class="cup">
+            <span class="steam"></span>
+            <span class="steam"></span>
+            <span class="steam"></span>
+            <div class="cup-handle"></div>
+        </div>
+        <br><br>
+        <p>Generating BOM... this might take a while😓</p>
+        <p>In the meantime, go grab a coffee!</p>
+    </div>
+
+    <script>
+        const orderId = {{ order_id }};
+
+        async function pollStatus() {
+            console.log("Polling status for order:", orderId);
+            try {
+                const response = await fetch(`/orders/${orderId}/get_bom_gen_status`);
+                const result = await response.json();
+
+                if (result.status === "done") {
+                    window.location.href = `/orders/${orderId}/edit`;
+                } else if (result.status === "failed") {
+                    alert("❌ BOM generation failed. Please try again later.");
+                } else {
+                    setTimeout(pollStatus, 2000); // Retry after 2 seconds
+                }
+            } catch (err) {
+                console.error("Error checking status:", err);
+                setTimeout(pollStatus, 5000); // Retry with backoff
+            }
+        }
+
+        pollStatus();
+    </script>
+</body>
+</html>

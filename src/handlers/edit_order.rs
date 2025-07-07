@@ -1,7 +1,7 @@
 use askama::Template;
-use umya_spreadsheet::Spreadsheet;
+use umya_spreadsheet::{PrintOptions, Spreadsheet};
 use crate::{
-    data::{errors::{self, DataError}, item, order, user}, models::{app::AppState, templates::EditOrderTemplate}
+    data::{errors::{self, DataError}, item, order, user}, models::{app::AppState, templates::{CoffeePageTemplate, EditOrderTemplate}}
 };
 use axum::{
     body::Body, extract::{Path, State}, http::{header, HeaderValue, StatusCode}, response::{Html, IntoResponse, Redirect, Response}, Form
@@ -206,10 +206,62 @@ pub async fn mark_order_unconfirmed_handler(State(app_state): State<AppState>,se
 pub async fn generate_bom_handler(
     State(app_state): State<AppState>,
     _session: Session,
-    Path(order_id): Path<i32>,
+    Path(order_id): Path<i32>
 ) -> Result<Response, errors::AppError>{
-    order::generate_bom(&app_state.connection_pool, order_id).await?;
-    Ok(Redirect::to(&format!("/orders/{}/edit", order_id)).into_response())
+
+    println!("Starting!");
+    // spawn tokio task and move to the background
+    {
+        let mut jobs = app_state.bom_jobs.lock().await;
+        jobs.insert(order_id, "in_progress".to_string());
+    }
+
+    tokio::spawn(async move {
+        let result = order::generate_bom(&app_state.connection_pool, order_id).await;
+        let mut jobs = app_state.bom_jobs.lock().await;
+        jobs.insert(
+            order_id,
+            if result.is_ok() {
+                println!("Done!");
+                "done".to_string()
+            } else {
+                println!("Failed!");
+                "failed".to_string()
+            },
+        );
+    });
+    // immediately return the coffee page, showing the status of the job
+    Ok(Redirect::to(&format!("/orders/{}/coffee", order_id)).into_response())
+}
+
+pub async fn get_generate_bom_job_status_handler(
+    State(app_state): State<AppState>,
+    _session: Session,
+    Path(order_id): Path<i32>) -> Result<Response, errors::AppError>{
+    let jobs = app_state.bom_jobs.lock().await;
+    let status = jobs
+        .get(&order_id)
+        .cloned()
+        .unwrap_or_else(|| "not_started".to_string());
+
+    let body = serde_json::json!({ "status": status });
+
+    Ok((
+        StatusCode::OK,
+        [(header::CONTENT_TYPE, "application/json")],
+        body.to_string(),
+    ).into_response())
+}
+
+pub async fn coffee_page_handler(
+    State(app_state): State<AppState>,
+    _session: Session,
+    Path(order_id): Path<i32>) -> Result<Response, errors::AppError> {
+        println!("Serving coffee");
+    let html_string = CoffeePageTemplate{order_id: order_id}.render().unwrap();
+
+        println!("sending coffee");
+    Ok(Html(html_string).into_response())
 }
 
 pub async fn download_bom_handler(
