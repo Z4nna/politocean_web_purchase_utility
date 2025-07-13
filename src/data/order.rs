@@ -6,7 +6,7 @@ use futures::stream::{FuturesUnordered, StreamExt};
 use sqlx::{PgPool, types::time::Date};
 use time::format_description;
 use umya_spreadsheet::{Spreadsheet};
-use crate::data::{mouser_apis, order};
+use crate::data::{mouser_apis};
 
 use crate::data::excel;
 

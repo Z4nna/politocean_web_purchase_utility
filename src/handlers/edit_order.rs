@@ -1,5 +1,5 @@
 use askama::Template;
-use umya_spreadsheet::{PrintOptions, Spreadsheet};
+use umya_spreadsheet::{Spreadsheet};
 use crate::{
     data::{errors::{self, DataError}, item, order, user}, models::{app::AppState, templates::{CoffeePageTemplate, EditOrderTemplate}}
 };
@@ -254,7 +254,7 @@ pub async fn get_generate_bom_job_status_handler(
 }
 
 pub async fn coffee_page_handler(
-    State(app_state): State<AppState>,
+    State(_app_state): State<AppState>,
     _session: Session,
     Path(order_id): Path<i32>) -> Result<Response, errors::AppError> {
         println!("Serving coffee");
