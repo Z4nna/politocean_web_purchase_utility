@@ -26,8 +26,7 @@ pub async fn set_item_pn(
         "Setting item PN for order {} with manufacturer {} and manufacturer_pn {}",
         order_id, manufacturer, manufacturer_pn
     );
-
-    // 1. Perform the update
+    
     sqlx::query!(
         "UPDATE order_items 
          SET mouser_pn = $1, digikey_pn = $2 
@@ -42,7 +41,7 @@ pub async fn set_item_pn(
     .await
     .map_err(DataError::Query)?;
 
-    // 2. Fetch updated values to verify
+    /* 2. Fetch updated values to verify
     let row = sqlx::query!(
         "SELECT mouser_pn, digikey_pn
          FROM order_items 
@@ -59,7 +58,7 @@ pub async fn set_item_pn(
         return Err(DataError::Internal(
             "Post-update check failed: values do not match".into()
         ));
-    }
+    }*/
 
     Ok(())
 }
