@@ -1,6 +1,7 @@
 use std::{fs::File, io::Write, time::Duration};
 use dotenvy::dotenv;
 use reqwest::{Client, Response};
+use tokio::time::sleep;
 use crate::models::mouser_api_models::{
     MouserPart,
     KeywordSearchRequest,
@@ -33,7 +34,7 @@ pub async fn search_mouser(
     let mut search_response: Response;
 
     let mut attempts = 0;
-    let max_attempts = 100;
+    let max_attempts = 20;
     loop {
         search_response = client
         .post(&url)
@@ -56,6 +57,8 @@ pub async fn search_mouser(
         } else {
             attempts += 1;
             println!("Retrying Mouser search, attempt {}", attempts);
+            // slow down api call rate exponentially to prevent limiting from mouser -> 403
+            sleep(Duration::from_millis(2u64.pow(attempts))).await;
             continue;
         }
     }

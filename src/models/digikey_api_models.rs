@@ -129,7 +129,7 @@ pub struct PriceBreak {
     pub total_price: f64,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct DigiKeyPart {
     pub manufacturer: String,
     pub manufacturer_pn: String,

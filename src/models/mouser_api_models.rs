@@ -40,7 +40,7 @@ pub struct Part {
     pub availability: Option<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct MouserPart {
     pub manufacturer: String,
     pub manufacturer_pn: String,

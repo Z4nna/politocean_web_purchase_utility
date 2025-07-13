@@ -1,14 +1,23 @@
 use crate::data::{item, errors::DataError};
 use crate::models::digikey_api_models::DigiKeyPart;
-use crate::models::mouser_api_models::{self, MouserPart};
+use crate::models::item::OrderItem;
+use crate::models::mouser_api_models::MouserPart;
+use futures::stream::{FuturesUnordered, StreamExt};
 use sqlx::{PgPool, types::time::Date};
 use time::format_description;
-use umya_spreadsheet::Spreadsheet;
+use umya_spreadsheet::{Spreadsheet};
 use crate::data::mouser_apis;
 
 use crate::data::excel;
 
 use super::digikey_apis;
+
+#[derive(Debug, Clone)]
+struct ItemProcessingResult {
+    item: OrderItem,
+    mouser_part: Option<MouserPart>,
+    digikey_part: Option<DigiKeyPart>
+}
 
 #[derive(sqlx::FromRow, Debug, Clone)]
 pub struct Order {
@@ -240,41 +249,47 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
     let mut mouser_book = excel::create_bom_file();
     let mut digikey_book = excel::create_bom_file();
 
-    // for each item, retrieve info from mouser / digikey
+    let mut tasks = FuturesUnordered::new();
+
     for item in order_items {
-        println!("Searching for item: {}", item.manufacturer_pn);
+        let item = item.clone();
+        tasks.push(async move {
+            let (mouser_part_res, digikey_part_res) = tokio::join!(
+                mouser_apis::search_mouser(
+                &item.manufacturer,
+                &item.manufacturer_pn,
+                item.quantity as u32),
+                digikey_apis::digikey_search(&item.manufacturer, 
+                &item.manufacturer_pn, 
+                item.quantity as u32)
+            );
+            let mouser_part_opt = mouser_part_res
+                .unwrap_or(None);
+            let digikey_part_opt = digikey_part_res
+                .unwrap_or(None);
+            ItemProcessingResult { item: item, mouser_part: mouser_part_opt, digikey_part: digikey_part_opt }
+        });
+    }
 
-        let (mouser_part_res, digikey_part_res) = tokio::join!(
-            mouser_apis::search_mouser(
-            &item.manufacturer,
-            &item.manufacturer_pn, 
-            item.quantity as u32),
-            digikey_apis::digikey_search(&item.manufacturer, 
-            &item.manufacturer_pn, 
-            item.quantity as u32)
-        );
+    let mut results: Vec<ItemProcessingResult> = Vec::new();
+    while let Some(result) = tasks.next().await {
+        results.push(result);
+    }
 
-        let mouser_part_opt = mouser_part_res
-            .map_err(|e| DataError::FailedQuery(e.to_string()))?;
-        let digikey_part_opt = digikey_part_res
-            .map_err(|e| DataError::FailedQuery(e.to_string()))?;
-
-        println!("Found {} mouser parts", mouser_part_opt.is_some() as i32);
-        println!("Found {} digikey parts", digikey_part_opt.is_some() as i32);
-
-        match (mouser_part_opt, digikey_part_opt) {
+    for result in results {
+        match (result.mouser_part, result.digikey_part) {
             (Some(mouser_part), Some(digikey_part)) => {
-                println!("id: {}, mouser_price: {}, digikey_price: {}", item.manufacturer_pn, mouser_part.unit_price, digikey_part.unit_price);
+                println!("id: {}, mouser_price: {}, digikey_price: {}", result.item.manufacturer_pn, mouser_part.unit_price, digikey_part.unit_price);
                 // check if item is available on both mouser and digikey
-                if (mouser_part.availability >= item.quantity as u32)
+                if (mouser_part.availability >= result.item.quantity as u32)
                 && mouser_part.unit_price > 0.0
                 && (mouser_part.unit_price < digikey_part.unit_price || digikey_part.unit_price == 0.0)  {
                     // adding to mouser book, set mouser_pn in db
                     item::set_item_pn(
                         pool, 
                         order_id, 
-                        item.manufacturer.clone(), 
-                        item.manufacturer_pn.clone(), 
+                        result.item.manufacturer.clone(), 
+                        result.item.manufacturer_pn.clone(), 
                         Some(mouser_part.mouser_pn.clone()), 
                         None
                     ).await?;
@@ -282,21 +297,21 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
                         &mut mouser_book,
                         mouser_part.manufacturer,
                         mouser_part.manufacturer_pn,
-                        item.quantity,
+                        result.item.quantity,
                         mouser_part.description,
                         mouser_part.unit_price,
-                        item.proposal,
+                        result.item.proposal,
                         mouser_part.product_url,
-                        item.project,
+                        result.item.project,
                         "".to_string()).map_err(|e| DataError::FailedQuery(e.to_string()))?;
-                } else if digikey_part.availability >= item.quantity as u32 
+                } else if digikey_part.availability >= result.item.quantity as u32 
                 && digikey_part.unit_price > 0.0 {
                     // adding to digikey book, set digikey_pn in db
                     item::set_item_pn(
                         pool, 
                         order_id, 
-                        item.manufacturer.clone(),
-                        item.manufacturer_pn.clone(), 
+                        result.item.manufacturer.clone(),
+                        result.item.manufacturer_pn.clone(), 
                         None, 
                         Some(digikey_part.digikey_pn.clone())
                     ).await?;
@@ -304,35 +319,35 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
                         &mut digikey_book,
                         digikey_part.manufacturer,
                         digikey_part.manufacturer_pn,
-                        item.quantity,
+                        result.item.quantity,
                         digikey_part.description,
                         digikey_part.unit_price,
-                        item.proposal,
+                        result.item.proposal,
                         digikey_part.product_url,
-                        item.project,
+                        result.item.project,
                         "".to_string()).map_err(|e| DataError::FailedQuery(e.to_string()))?;
                 } else {
                     println!("Item not available on both mouser and digikey");
                     excel::add_item_to_bom(
                         &mut mouser_book,
-                        item.manufacturer,
-                        item.manufacturer_pn,
+                        result.item.manufacturer,
+                        result.item.manufacturer_pn,
                         0,
                         "".to_string(),
                         0.0,
-                        item.proposal,
+                        result.item.proposal,
                         "".to_string(),
-                        item.project,
+                        result.item.project,
                         "".to_string()).map_err(|e| DataError::FailedQuery(e.to_string()))?;
                 }
             },
             (None, Some(digikey_part)) => { // only available on digikey
-                println!("id: {}, digikey_price: {}", item.manufacturer_pn, digikey_part.unit_price);
+                println!("id: {}, digikey_price: {}", result.item.manufacturer_pn, digikey_part.unit_price);
                 item::set_item_pn(
                     pool, 
                     order_id, 
-                    item.manufacturer.clone(), 
-                    item.manufacturer_pn.clone(), 
+                    result.item.manufacturer.clone(), 
+                    result.item.manufacturer_pn.clone(), 
                     None, 
                     Some(digikey_part.digikey_pn.clone())
                 ).await?;
@@ -340,21 +355,21 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
                     &mut digikey_book, 
                     digikey_part.manufacturer, 
                     digikey_part.manufacturer_pn, 
-                    item.quantity, 
+                    result.item.quantity, 
                     digikey_part.description,
                     digikey_part.unit_price,
-                    item.proposal,
+                    result.item.proposal,
                     digikey_part.product_url,
-                    item.project,
+                    result.item.project,
                     "".to_string()).map_err(|e| DataError::FailedQuery(e.to_string()))?;
             }
             (Some(mouser_part), None) => { // only available on mouser
-                println!("id: {}, mouser_price: {}", item.manufacturer_pn, mouser_part.unit_price);
+                println!("id: {}, mouser_price: {}", result.item.manufacturer_pn, mouser_part.unit_price);
                 item::set_item_pn(
                     pool, 
                     order_id, 
-                    item.manufacturer.clone(), 
-                    item.manufacturer_pn.clone(), 
+                    result.item.manufacturer.clone(), 
+                    result.item.manufacturer_pn.clone(), 
                     Some(mouser_part.mouser_pn.clone()), 
                     None
                 ).await?;
@@ -362,26 +377,26 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
                     &mut mouser_book,
                     mouser_part.manufacturer,
                     mouser_part.manufacturer_pn,
-                    item.quantity,
+                    result.item.quantity,
                     mouser_part.description,
                     mouser_part.unit_price,
-                    item.proposal,
+                    result.item.proposal,
                     mouser_part.product_url,
-                    item.project,
+                    result.item.project,
                     "".to_string()).map_err(|e| DataError::FailedQuery(e.to_string()))?;
             }
             (None, None) => { // part not found
-                println!("id: {}, not found", item.manufacturer_pn);
+                println!("id: {}, not found", result.item.manufacturer_pn);
                 excel::add_item_to_bom(
                     &mut mouser_book,
-                    item.manufacturer,
-                    item.manufacturer_pn,
+                    result.item.manufacturer,
+                    result.item.manufacturer_pn,
                     0,
                     "".to_string(),
                     0.0,
-                    item.proposal,
+                    result.item.proposal,
                     "".to_string(),
-                    item.project,
+                    result.item.project,
                     "".to_string()).map_err(|e| DataError::FailedQuery(e.to_string()))?;
             }
         }
