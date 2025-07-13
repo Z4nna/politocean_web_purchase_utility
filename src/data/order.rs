@@ -1,5 +1,6 @@
 use crate::data::{item, errors::DataError};
-use crate::models::mouser_api_models;
+use crate::models::digikey_api_models::DigiKeyPart;
+use crate::models::mouser_api_models::{self, MouserPart};
 use sqlx::{PgPool, types::time::Date};
 use time::format_description;
 use umya_spreadsheet::Spreadsheet;
@@ -242,18 +243,23 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
     // for each item, retrieve info from mouser / digikey
     for item in order_items {
         println!("Searching for item: {}", item.manufacturer_pn);
-        let mouser_part_opt: Option<mouser_api_models::MouserPart> = mouser_apis::search_mouser(
+
+        let (mouser_part_res, digikey_part_res) = tokio::join!(
+            mouser_apis::search_mouser(
             &item.manufacturer,
             &item.manufacturer_pn, 
-            item.quantity as u32)
-            .await
-            .map_err(|e| DataError::FailedQuery(e.to_string()))?;
-        println!("Found {} mouser parts", mouser_part_opt.is_some() as i32);
-        let digikey_part_opt = digikey_apis::digikey_search(&item.manufacturer, 
+            item.quantity as u32),
+            digikey_apis::digikey_search(&item.manufacturer, 
             &item.manufacturer_pn, 
             item.quantity as u32)
-            .await
+        );
+
+        let mouser_part_opt = mouser_part_res
             .map_err(|e| DataError::FailedQuery(e.to_string()))?;
+        let digikey_part_opt = digikey_part_res
+            .map_err(|e| DataError::FailedQuery(e.to_string()))?;
+
+        println!("Found {} mouser parts", mouser_part_opt.is_some() as i32);
         println!("Found {} digikey parts", digikey_part_opt.is_some() as i32);
 
         match (mouser_part_opt, digikey_part_opt) {

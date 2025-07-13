@@ -13,7 +13,7 @@ pub async fn search_mouser(
     query_manufacturer: &str,
     query_manufacturer_pn: &str,
     quantity: u32,
-) -> Result<Option<MouserPart>, Box<dyn std::error::Error>> {
+) -> Result<Option<MouserPart>, Box<dyn std::error::Error + Send + Sync>> {
     dotenv().ok();
     let api_key = std::env::var("MOUSER_API_KEY").expect("MOUSER_API_KEY must be set");
     let url = format!(

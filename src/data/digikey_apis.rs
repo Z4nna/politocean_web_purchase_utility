@@ -12,7 +12,7 @@ use crate::models::digikey_api_models::{
 };
 use serde_path_to_error::deserialize;
 
-async fn digikey_get_token() -> Result<String, Box<dyn std::error::Error>> {
+async fn digikey_get_token() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     dotenv().ok();
     let client_id = std::env::var("DIGIKEY_CLIENT_ID").expect("DIGIKEY_CLIENT_ID not set");
     let client_secret = std::env::var("DIGIKEY_CLIENT_SECRET").expect("DIGIKEY_CLIENT_SECRET not set");
@@ -34,7 +34,7 @@ async fn digikey_get_token() -> Result<String, Box<dyn std::error::Error>> {
     Ok(token.access_token)
 }
 
-pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &str, quantity: u32,) -> Result<Option<DigiKeyPart>, Box<dyn std::error::Error>> {
+pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &str, quantity: u32,) -> Result<Option<DigiKeyPart>, Box<dyn std::error::Error + Send + Sync>> {
     dotenv().ok();
     let client_id = std::env::var("DIGIKEY_CLIENT_ID").expect("DIGIKEY_CLIENT_ID not set");
     println!("Searching for {} {} on Digikey", query_manufacturer, query_manufacturer_pn);
