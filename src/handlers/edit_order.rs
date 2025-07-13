@@ -1,4 +1,5 @@
 use askama::Template;
+use chrono::Local;
 use umya_spreadsheet::{Spreadsheet};
 use crate::{
     data::{errors::{self, DataError}, item, order, user}, models::{app::AppState, templates::{CoffeePageTemplate, EditOrderTemplate}}
@@ -209,7 +210,7 @@ pub async fn generate_bom_handler(
     Path(order_id): Path<i32>
 ) -> Result<Response, errors::AppError>{
 
-    println!("Starting!");
+    println!("[{}] Starting!", Local::now().format("%Y-%m-%d %H:%M:%S"));
     // spawn tokio task and move to the background
     {
         let mut jobs = app_state.bom_jobs.lock().await;
@@ -222,7 +223,7 @@ pub async fn generate_bom_handler(
         jobs.insert(
             order_id,
             if result.is_ok() {
-                println!("Done!");
+                println!("[{}] Done!", Local::now().format("%Y-%m-%d %H:%M:%S"));
                 "done".to_string()
             } else {
                 println!("Failed!");
@@ -230,7 +231,7 @@ pub async fn generate_bom_handler(
             },
         );
     });
-    // immediately return the coffee page, showing the status of the job
+    // immediately return the coffee page, waiting for the job to finish
     Ok(Redirect::to(&format!("/orders/{}/coffee", order_id)).into_response())
 }
 
@@ -257,10 +258,7 @@ pub async fn coffee_page_handler(
     State(_app_state): State<AppState>,
     _session: Session,
     Path(order_id): Path<i32>) -> Result<Response, errors::AppError> {
-        println!("Serving coffee");
     let html_string = CoffeePageTemplate{order_id: order_id}.render().unwrap();
-
-        println!("sending coffee");
     Ok(Html(html_string).into_response())
 }
 

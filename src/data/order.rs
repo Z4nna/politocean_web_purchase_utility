@@ -291,18 +291,14 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
     for item in order_items {
         let item = item.clone();
         tasks.push(async move {
-            let (mouser_part_res, digikey_part_res) = tokio::join!(
-                mouser_apis::search_mouser(
+            let mouser_part_opt = mouser_apis::search_mouser(
                 &item.manufacturer,
                 &item.manufacturer_pn,
-                item.quantity as u32),
-                digikey_apis::digikey_search(&item.manufacturer, 
-                &item.manufacturer_pn, 
-                item.quantity as u32)
-            );
-            let mouser_part_opt = mouser_part_res
+                item.quantity as u32).await
                 .unwrap_or(None);
-            let digikey_part_opt = digikey_part_res
+            let digikey_part_opt = digikey_apis::digikey_search(&item.manufacturer, 
+                &item.manufacturer_pn, 
+                item.quantity as u32).await
                 .unwrap_or(None);
             ItemProcessingResult { item: item, mouser_part: mouser_part_opt, digikey_part: digikey_part_opt }
         });
