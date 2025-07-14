@@ -1,6 +1,6 @@
 use reqwest::Client;
 use tokio::{sync::RwLock, time::Instant};
-use std::{fs::File, io::Write, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 use dotenvy::dotenv;
 use crate::models::digikey_api_models::{
     TokenResponse,
@@ -109,35 +109,23 @@ pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &st
         .timeout(Duration::from_secs(100))
         .send()
         .await?;
-    println!("Sent digikey search request successfully");
 
     if !search_response.status().is_success() {
         return Err(format!("Failed to search DigiKey: code {:?}", search_response.status()).into());
     }
-    println!("Search successful");
 
     let bytes = search_response.bytes().await?;
 
-    let json: serde_json::Value = serde_json::from_slice(&bytes)?;
+    //let json: serde_json::Value = serde_json::from_slice(&bytes)?;
 
     // Serialize the JSON with pretty formatting
-    let pretty = serde_json::to_string_pretty(&json)?;
+    //let pretty = serde_json::to_string_pretty(&json)?;
 
     // Write to a file
-    let mut file = File::create("digikey_response_pretty.json")?;
-    file.write_all(pretty.as_bytes())?;
+    //let mut file = File::create("digikey_response_pretty.json")?;
+    //file.write_all(pretty.as_bytes())?;
 
     let myresponse: DigiKeySearchResult;
-    /*
-    match serde_json::from_slice(&bytes) {
-        Ok(response) => {
-            myresponse = response;
-        }
-        Err(e) => {
-            println!("Error parsing JSON: {}", e);
-            return Err(format!("Error parsing JSON: {}", e).into());
-        }
-    }*/
 
     let mut de = serde_json::Deserializer::from_slice(&bytes);
     match deserialize::<_, DigiKeySearchResult>(&mut de) {
@@ -149,8 +137,6 @@ pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &st
             return Err(format!("Error parsing JSON: {}", e).into());
         }
     };
-    //let myresponse = search_response.json::<DigiKeySearchResult>().await?;
-    println!("Response parsed");
 
     let mut possible_products: Vec<Product> = Vec::new();
     for product in myresponse.products {

@@ -316,8 +316,11 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
     for result in results {
         match (result.mouser_part, result.digikey_part) {
             (Some(mouser_part), Some(digikey_part)) => {
-                println!("id: {}, mouser_price: {}, digikey_price: {}", result.item.manufacturer_pn, mouser_part.unit_price, digikey_part.unit_price);
-                // check if item is available on both mouser and digikey
+                println!("man: {} - id: {} - mouser_price: {} - digikey_price: {}", 
+                    result.item.manufacturer,
+                    result.item.manufacturer_pn, 
+                    mouser_part.unit_price, 
+                    digikey_part.unit_price);
                 if (mouser_part.availability >= result.item.quantity as u32)
                 && mouser_part.unit_price > 0.0
                 && (mouser_part.unit_price < digikey_part.unit_price || digikey_part.unit_price == 0.0)  {
@@ -356,7 +359,7 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
                         &mut digikey_book
                     ).await?;
                 } else {
-                    println!("Item not available on both mouser and digikey");
+                    println!("Item not available on mouser nor digikey");
                     add_to_bom_and_db(
                         pool,
                         order_id,
@@ -375,7 +378,7 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
                 }
             },
             (None, Some(digikey_part)) => { // only available on digikey
-                println!("id: {}, digikey_price: {}", result.item.manufacturer_pn, digikey_part.unit_price);
+                println!("man: {} - id: {} - digikey_price: {}", result.item.manufacturer, result.item.manufacturer_pn, digikey_part.unit_price);
                 add_to_bom_and_db(
                     pool,
                     order_id,
@@ -393,7 +396,7 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
                 ).await?;
             }
             (Some(mouser_part), None) => { // only available on mouser
-                println!("id: {}, mouser_price: {}", result.item.manufacturer_pn, mouser_part.unit_price);
+                println!("man: {} - id: {} - mouser_price: {}", result.item.manufacturer, result.item.manufacturer_pn, mouser_part.unit_price);
                 add_to_bom_and_db(
                         pool,
                         order_id,
@@ -411,7 +414,7 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
                     ).await?;
             }
             (None, None) => { // part not found
-                println!("id: {}, not found", result.item.manufacturer_pn);
+                println!("man: {} - id: {} - not found", result.item.manufacturer, result.item.manufacturer_pn);
                 add_to_bom_and_db (
                         pool,
                         order_id,

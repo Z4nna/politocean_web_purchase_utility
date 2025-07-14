@@ -22,10 +22,6 @@ pub async fn set_item_pn(
     mouser_pn: Option<String>,
     digikey_pn: Option<String>
 ) -> Result<(), DataError> {
-    println!(
-        "Setting item PN for order {} with manufacturer {} and manufacturer_pn {}",
-        order_id, manufacturer, manufacturer_pn
-    );
     
     sqlx::query!(
         "UPDATE order_items 
@@ -40,25 +36,6 @@ pub async fn set_item_pn(
     .execute(pool)
     .await
     .map_err(DataError::Query)?;
-
-    /* 2. Fetch updated values to verify
-    let row = sqlx::query!(
-        "SELECT mouser_pn, digikey_pn
-         FROM order_items 
-         WHERE order_id = $1  AND manufacturer = $2 AND manufacturer_pn = $3",
-        order_id,
-        manufacturer,
-        manufacturer_pn
-    )
-    .fetch_one(pool)
-    .await
-    .map_err(DataError::Query)?;
-
-    if row.mouser_pn != mouser_pn || row.digikey_pn != digikey_pn {
-        return Err(DataError::Internal(
-            "Post-update check failed: values do not match".into()
-        ));
-    }*/
 
     Ok(())
 }

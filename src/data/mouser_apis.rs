@@ -1,4 +1,4 @@
-use std::{fs::File, io::Write, time::Duration};
+use std::{time::Duration};
 use dotenvy::dotenv;
 use reqwest::{Client, Response};
 use tokio::time::sleep;
@@ -17,6 +17,7 @@ pub async fn search_mouser(
 ) -> Result<Option<MouserPart>, Box<dyn std::error::Error + Send + Sync>> {
     dotenv().ok();
     let api_key = std::env::var("MOUSER_API_KEY").expect("MOUSER_API_KEY must be set");
+    println!("Searching for {} {} on Mouser", query_manufacturer, query_manufacturer_pn);
     let url = format!(
         "https://api.mouser.com/api/v1/search/keyword?apiKey={}",
         api_key
@@ -44,12 +45,10 @@ pub async fn search_mouser(
         .timeout(Duration::from_secs(100))
         .send()
         .await?;
-        println!("Sent Mouser search request successfully");
 
         if !search_response.status().is_success() {
             println!("Failed to search Mouser: code {:?}", search_response.status());
         } else {
-            println!("Search successful");
             break;
         }
         if attempts >= max_attempts {
@@ -65,14 +64,14 @@ pub async fn search_mouser(
 
     let bytes = search_response.bytes().await?;
 
-    let json: serde_json::Value = serde_json::from_slice(&bytes)?;
+    //let json: serde_json::Value = serde_json::from_slice(&bytes)?;
 
     // Serialize the JSON with pretty formatting
-    let pretty = serde_json::to_string_pretty(&json)?;
+    //let pretty = serde_json::to_string_pretty(&json)?;
 
     // Write to a file
-    let mut file = File::create("mouser_response.json")?;
-    file.write_all(pretty.as_bytes())?;
+    //let mut file = File::create("mouser_response.json")?;
+    //file.write_all(pretty.as_bytes())?;
 
     let response: MouserResponse;
 
@@ -87,7 +86,6 @@ pub async fn search_mouser(
             return Box::pin(search_mouser(query_manufacturer, query_manufacturer_pn, quantity)).await;
         }
     };
-    println!("Response parsed");
 
     match response.search_results {
         Some(search_results) => {
