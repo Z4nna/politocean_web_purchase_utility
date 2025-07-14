@@ -1,5 +1,6 @@
 use reqwest::Client;
-use std::{fs::File, io::Write, time::Duration};
+use tokio::{sync::RwLock, time::Instant};
+use std::{fs::File, io::Write, sync::Arc, time::Duration};
 use dotenvy::dotenv;
 use crate::models::digikey_api_models::{
     TokenResponse,
@@ -11,26 +12,63 @@ use crate::models::digikey_api_models::{
     Product
 };
 use serde_path_to_error::deserialize;
+use once_cell::sync::Lazy;
+
+#[derive(Debug, Clone)]
+struct TokenCache {
+    token: String,
+    expires_at: Instant,
+}
+
+static DIGIKEY_TOKEN: Lazy<Arc<RwLock<Option<TokenCache>>>> = Lazy::new(|| Arc::new(RwLock::new(None)));
 
 async fn digikey_get_token() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    {
+        let token_lock = DIGIKEY_TOKEN.read().await;
+
+        if let Some(ref token_cache) = *token_lock {
+            if Instant::now() < token_cache.expires_at {
+                return Ok(token_cache.token.clone());
+            }
+        }
+    }
+
+    let mut token_lock = DIGIKEY_TOKEN.write().await;
+
     dotenv().ok();
-    let client_id = std::env::var("DIGIKEY_CLIENT_ID").expect("DIGIKEY_CLIENT_ID not set");
-    let client_secret = std::env::var("DIGIKEY_CLIENT_SECRET").expect("DIGIKEY_CLIENT_SECRET not set");
+
+    let client_id = std::env::var("DIGIKEY_CLIENT_ID")?;
+    let client_secret = std::env::var("DIGIKEY_CLIENT_SECRET")?;
+
+    println!("🔐 Fetching new Digi-Key token...");
 
     let client = Client::new();
-
     let token_response = client
         .post("https://api.digikey.com/v1/oauth2/token")
         .header("Content-Type", "application/x-www-form-urlencoded")
-        .body(format!("client_id={client_id}&client_secret={client_secret}&grant_type=client_credentials"))
+        .body(format!(
+            "client_id={}&client_secret={}&grant_type=client_credentials",
+            client_id, client_secret
+        ))
         .send()
         .await?;
 
     if !token_response.status().is_success() {
-        return Err(format!("Failed to get token: {:?}", token_response.text().await?).into());
+        return Err(format!(
+            "Failed to get Digi-Key token: {}",
+            token_response.text().await?
+        )
+        .into());
     }
 
     let token: TokenResponse = token_response.json().await?;
+
+    let expires_in = token.expires_in;
+    *token_lock = Some(TokenCache {
+        token: token.access_token.clone(),
+        expires_at: Instant::now() + Duration::from_secs(expires_in.saturating_sub(60)),
+    });
+
     Ok(token.access_token)
 }
 
