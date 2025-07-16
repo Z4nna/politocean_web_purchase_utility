@@ -118,7 +118,6 @@ pub async fn upload_kicad_bom_handler(
     session: Session,
     mut multipart: Multipart
 ) -> Result<Response, errors::AppError> {
-    println!("Uploading file...");
     let mut fields: HashMap<String, String> = HashMap::new();
     let mut file_bytes: Option<Bytes> = None;
 
@@ -134,7 +133,6 @@ pub async fn upload_kicad_bom_handler(
         }
     }
     let spreadsheet = excel::load_from_bytes(&file_bytes.unwrap()).map_err(|e| errors::DataError::Internal(e))?;
-    println!("Spreadsheet loaded");
     order::create_order_from_kicad_bom(
         &app_state.connection_pool,
         session.get::<i32>("authenticated_user_id").await.unwrap().unwrap(),

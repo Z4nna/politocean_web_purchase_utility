@@ -81,6 +81,34 @@
         <button type="submit" class="button submit-button">✅ Aggiorna Ordine</button>
     </form>
     <hr>
+    <h2 class="section-title">Bulk Add</h2>
+    <p>La prima colonna dell'excel deve essere la quantità (quantità < 1 verranno ignorate), 
+        la seconda colonna il nome del produttore (nomi nulli verranno ignorati),
+        la terza colonna il part number del prodotto (P.N. nulli verranno ignorati).
+        La prima riga è considerata la riga di intestazione, pertanto verrà ignorata.
+    </p>
+    <form action="/orders/{{ order.id }}/edit/bulk-add" method="post" enctype="multipart/form-data" class="order-form">
+        <div class="form-row">
+            <label for="proposal">Proposal:</label>
+            <select name="proposal" id="proposal" required>
+                {% for proposal in proposals %}
+                <option value="{{proposal}}">{{proposal}}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label for="project">Project:</label>
+            <select name="project" id="project" required>
+                {% for project in projects %}
+                <option value="{{project}}">{{project}}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <input type="file" name="file" class="file-input" accept=".xlsx">
+        <button type="submit">Upload</button>
+    </form>
     <h2 class="section-title">Azioni</h2>
     <p>Make sure to re-generate the BOM for every change you make!</p>
     <div class="actions">
@@ -100,6 +128,5 @@
             <button type="submit">🛒 Download Mouser Cart</button>
         </form>
     </div>
-
 </body>
 </html>

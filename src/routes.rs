@@ -37,6 +37,7 @@ fn orders_routes() -> Router<app::AppState> {
         .route("/orders/new/upload-kicad-bom", post(new_order::upload_kicad_bom_handler))
         .route("/orders/:id/edit", get(edit_order::edit_order_handler))
         .route("/orders/:id/edit/submit", post(edit_order::submit_order_handler))
+        .route("/orders/:id/edit/bulk-add", post(edit_order::bulk_add_handler))
         .route("/orders/:id/edit/generate-bom", post(edit_order::generate_bom_handler))
         .route("/orders/:id/edit/download-bom", post(edit_order::download_bom_handler))
         .route("/orders/:id/edit/create-mouser-cart", post(edit_order::download_mouser_cart_handler))

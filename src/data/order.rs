@@ -223,7 +223,10 @@ pub async fn add_item_to_order(
     digikey_pn: Option<String>,
 ) -> Result<(), DataError> {
     sqlx::query!(
-        "INSERT INTO order_items (order_id, manufacturer, manufacturer_pn, quantity, proposal, project, mouser_pn, digikey_pn) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+        "INSERT INTO order_items (order_id, manufacturer, manufacturer_pn, quantity, proposal, project, mouser_pn, digikey_pn) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (order_id, manufacturer, manufacturer_pn)
+        DO UPDATE SET quantity = order_items.quantity + EXCLUDED.quantity",
         order_id,
         manifacturer,
         manifacturer_pn,
@@ -378,7 +381,7 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
                 }
             },
             (None, Some(digikey_part)) => { // only available on digikey
-                println!("man: {} - id: {} - digikey_price: {}", result.item.manufacturer, result.item.manufacturer_pn, digikey_part.unit_price);
+                println!("manufacturer: {} - pn: {} - digikey_price: {}", result.item.manufacturer, result.item.manufacturer_pn, digikey_part.unit_price);
                 add_to_bom_and_db(
                     pool,
                     order_id,
@@ -469,6 +472,22 @@ pub async fn create_order_from_kicad_bom(
     let order_id = create_order(pool, author_id, description, area_division, area_sub_area).await?;
     // read kicad bom file, for each item, nsert into db
     let bom_items = excel::parse_kicad_bom_file(kicad_bom_file).map_err(|e| DataError::FailedQuery(e))?;
+    for item in bom_items {
+        println!("{}: {}x {}", item.manifacturer, item.quantity, item.manifacturer_pn);
+        add_item_to_order(pool, order_id, item.manifacturer, item.manifacturer_pn, item.quantity, proposal.clone(), project.clone(), None, None).await?;
+    }
+    Ok(())
+}
+
+pub async fn bulk_add_from_bom(
+    pool: &PgPool,
+    order_id: i32,
+    proposal: String,
+    project: String,
+    bom: &Spreadsheet
+) -> Result<(), DataError> {
+    // read bom file, for each item, nsert into db
+    let bom_items = excel::parse_kicad_bom_file(bom).map_err(|e| DataError::FailedQuery(e))?;
     for item in bom_items {
         println!("{}: {}x {}", item.manifacturer, item.quantity, item.manifacturer_pn);
         add_item_to_order(pool, order_id, item.manifacturer, item.manifacturer_pn, item.quantity, proposal.clone(), project.clone(), None, None).await?;

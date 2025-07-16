@@ -1,11 +1,10 @@
 use askama::Template;
-use chrono::Local;
 use umya_spreadsheet::{Spreadsheet};
 use crate::{
-    data::{errors::{self, DataError}, item, order, user}, models::{app::AppState, templates::{CoffeePageTemplate, EditOrderTemplate}}
+    data::{errors::{self, DataError}, excel, item, order, user}, models::{app::AppState, templates::{CoffeePageTemplate, EditOrderTemplate}}
 };
 use axum::{
-    body::Body, extract::{Path, State}, http::{header, HeaderValue, StatusCode}, response::{Html, IntoResponse, Redirect, Response}, Form
+    body::{Body, Bytes}, extract::{Multipart, Path, State}, http::{header, HeaderValue, StatusCode}, response::{Html, IntoResponse, Redirect, Response}, Form
 };
 use tower_sessions::Session;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
@@ -210,7 +209,7 @@ pub async fn generate_bom_handler(
     Path(order_id): Path<i32>
 ) -> Result<Response, errors::AppError>{
 
-    println!("[{}] Starting!", Local::now().format("%Y-%m-%d %H:%M:%S"));
+    println!("Starting BOM generation.");
     // spawn tokio task and move to the background
     {
         let mut jobs = app_state.bom_jobs.lock().await;
@@ -223,10 +222,10 @@ pub async fn generate_bom_handler(
         jobs.insert(
             order_id,
             if result.is_ok() {
-                println!("[{}] Done!", Local::now().format("%Y-%m-%d %H:%M:%S"));
+                println!("Done.");
                 "done".to_string()
             } else {
-                println!("Failed!");
+                println!("Failed.");
                 "failed".to_string()
             },
         );
@@ -235,10 +234,10 @@ pub async fn generate_bom_handler(
     Ok(Redirect::to(&format!("/orders/{}/coffee", order_id)).into_response())
 }
 
-pub async fn get_generate_bom_job_status_handler(
+pub async fn get_generate_bom_job_status_handler (
     State(app_state): State<AppState>,
-    _session: Session,
-    Path(order_id): Path<i32>) -> Result<Response, errors::AppError>{
+    Path(order_id): Path<i32>
+) -> Result<Response, errors::AppError>{
     let jobs = app_state.bom_jobs.lock().await;
     let status = jobs
         .get(&order_id)
@@ -422,4 +421,34 @@ pub async fn download_mouser_cart_handler(
             .body(Body::from(buffer.into_inner()))
             .unwrap();
     Ok(response)
+}
+
+pub async fn bulk_add_handler(
+    State(app_state): State<AppState>,
+    Path(order_id): Path<i32>,
+    mut multipart: Multipart,
+) -> Result<Response, errors::AppError> {
+    let mut fields: HashMap<String, String> = HashMap::new();
+    let mut file_bytes: Option<Bytes> = None;
+
+    while let Some(field) = multipart.next_field().await.unwrap() {
+        let name = field.name().unwrap().to_string();
+
+        if name == "file" {
+            file_bytes = Some(field.bytes().await.unwrap());
+        } else {
+            // Normal text field
+            let text = field.text().await.unwrap();
+            fields.insert(name, text);
+        }
+    }
+    let spreadsheet = excel::load_from_bytes(&file_bytes.unwrap()).map_err(|e| errors::DataError::Internal(e))?;
+    order::bulk_add_from_bom(
+        &app_state.connection_pool,
+        order_id,
+        fields.get("proposal").unwrap().to_string(),
+        fields.get("project").unwrap().to_string(),
+        &spreadsheet
+    ).await?;
+    return Ok(Redirect::to("/home").into_response());
 }
