@@ -41,7 +41,7 @@
                         <td class="actions-cell">
                             {% if order.confirmed == false %}
                                 <form action="/orders/{{ order.id }}/edit" class="inline-form action" method="get">
-                                    <button type="submit">Edit</button>
+                                    <button type="submit" class="button">Edit</button>
                                 </form>
                                 {% if order.ready == false %}
                                 <form action="/orders/{{ order.id }}/ready" method="post" class="inline-form action">

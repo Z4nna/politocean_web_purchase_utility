@@ -43,7 +43,7 @@ body {
     background-color: var(--bg-dark);
     color: var(--text);
     line-height: 1.6;
-    padding: 2rem;
+    padding: 0;
 }
 
 /* --- Typography --- */

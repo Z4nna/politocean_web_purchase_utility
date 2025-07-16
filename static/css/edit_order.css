@@ -5,7 +5,8 @@
     background: var(--bg);  /* secondary color with 0.1 opacity */
     padding: 2rem;
     border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    border-right: 2px solid var(--border);
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.05);
 }
 
 .form-row {
@@ -79,14 +80,6 @@ input[type="text"] {
     background-color: var(--success);
 }
 
-.actions {
-    margin-top: 2rem;
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
 .secondary-button {
     background-color: var(--secondary);
     color: var(--text);
@@ -107,6 +100,7 @@ form.inline-form {
     padding: 0;
     border: none;
     background: none;
+    
 }
 
 #items-container {
@@ -162,4 +156,78 @@ form.inline-form {
 .item-input-fields {
     overflow-x: auto;
     white-space: nowrap;
+}
+
+.page-wrapper {
+    display: flex;
+    min-height: 100vh;
+    gap: 2rem;
+    flex-direction: row;
+}
+
+.sidebar {
+    margin-top: 2rem;
+    width: 400px;
+    background-color: var(--bg);
+    padding: 1.5rem;
+    border-right: 2px solid var(--border);
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.05);
+    border-radius: 0 12px 12px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 2rem;
+}
+
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    justify-content: flex-start;
+    align-items: stretch;
+}
+
+.actions button {
+    width: 100%;
+}
+
+.file-input {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    border: 2px dashed var(--border);
+    border-radius: 6px;
+    background-color: var(--bg-dark);
+    color: var(--text);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    margin-top: 0.5rem;
+    width: 100%;
+}
+
+.file-input:hover {
+    background-color: rgba(56, 163, 165, 0.1); /* subtle secondary tint */
+    border-color: var(--highlight);
+}
+
+.file-input::file-selector-button {
+    background-color: var(--primary);
+    color: var(--text);
+    padding: 0.4rem 1rem;
+    border: none;
+    border-radius: 6px;
+    margin-right: 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+}
+
+.file-input::file-selector-button:hover {
+    background-color: var(--border);
+    color: var(--text);
 }

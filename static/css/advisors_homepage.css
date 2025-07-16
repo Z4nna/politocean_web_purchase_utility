@@ -109,7 +109,7 @@ form.inline-form {
     font-size: 0.9rem;
     border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: var(--bg) 0.3s ease;
 }
 
 .button:hover {
@@ -128,4 +128,8 @@ form.inline-form {
 .new-order-button {
     text-align: center;
     margin-top: 2rem;
+}
+
+a {
+    color: var(--text);
 }
