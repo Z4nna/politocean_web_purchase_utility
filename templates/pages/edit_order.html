@@ -18,11 +18,14 @@
     <div class="page-wrapper">
 
         <aside class="sidebar">
-            <h2 class="section-title">Azioni</h2>
-            <p>Make sure to re-generate the BOM for every change you make!</p>
+            <h2 class="section-title">Actions</h2>
+            <p>
+                Make sure to re-generate the BOM before downloading any generated file, 
+                as the changes applied since the last BOM generation will not be included!
+            </p>
             <div class="actions">
                 <form action="/home" method="get" class="inline-form">
-                    <button type="submit" >🏠 Torna alla Home</button>
+                    <button type="submit" >🏠 Home</button>
                 </form>
                 <form action="/orders/{{ order.id }}/edit/generate-bom" method="post" class="inline-form">
                     <button type="submit" onclick="showLoadingContainer()">📄 Generate BOM</button>
@@ -40,17 +43,17 @@
         </aside>
 
         <main class="main-content">
-            <h1 class="page-title">Dettagli Ordine #{{ order.id }}</h1>
+            <h1 class="page-title">Order details #{{ order.id }}</h1>
             <form action="/orders/{{ order.id }}/edit/submit" method="post" class="order-form">
                 <div class="form-row">
-                    <label for="description">Descrizione:</label>
+                    <label for="description">Description:</label>
                     <input type="text" id="description" name="description" value="{{ order.description }}" required>
                 </div>
 
-                <p class="order-info"><strong>Data:</strong> {{ order.get_date() }}</p>
+                <p class="order-info"><strong>Date:</strong> {{ order.get_date() }}</p>
 
                 <div class="form-row">
-                    <label for="area_division">Divisione:</label>
+                    <label for="area_division">Division:</label>
                     <select name="area_division" id="area_division" required>
                         {% for area in areas %}
                         <option value="{{area}}" {% if area == order.area_division.as_str() %}selected{% endif %}>{{area}}</option>
@@ -59,7 +62,7 @@
                 </div>
 
                 <div class="form-row">
-                    <label for="area_sub_area">Sub-area:</label>
+                    <label for="area_sub_area">Area:</label>
                     <select name="area_sub_area" id="area_sub_area" required>
                         {% for sub_area in sub_areas %}
                         <option value="{{sub_area}}" {% if sub_area == order.area_sub_area.as_str() %}selected{% endif %}>{{sub_area}}</option>
@@ -67,17 +70,17 @@
                     </select>
                 </div>
 
-                <p class="order-info"><strong>Stato:</strong>
+                <p class="order-info"><strong>State:</strong>
                     {% if order.confirmed %}
-                        Confermato
+                        Confirmed
                     {% else if order.ready %}
-                        Pronto
+                        Ready
                     {% else %}
-                        In preparazione
+                        Being prepared
                     {% endif %}
                 </p>
 
-                <h3 class="section-title">Articoli</h3>
+                <h3 class="section-title">Items</h3>
                 <div id="items-container">
                     <div class="item-entry header-row">
                         <span>Proposal</span>
@@ -101,16 +104,17 @@
                     {% endfor %}
                 </script>
 
-                <button type="button" class="button add-button" onclick="addItemEntry()">➕ Aggiungi Articolo</button><br><br>
+                <button type="button" class="button add-button" onclick="addItemEntry()">➕ Add new item</button><br><br>
 
-                <button type="submit" class="button submit-button">✅ Aggiorna Ordine</button>
+                <button type="submit" class="button submit-button">✅ Update order</button>
             </form>
             <hr>
             <h2 class="section-title">Bulk Add</h2>
-            <p>La prima colonna dell'excel deve essere la quantità (quantità < 1 verranno ignorate), 
-                la seconda colonna il nome del produttore (nomi nulli verranno ignorati),
-                la terza colonna il part number del prodotto (P.N. nulli verranno ignorati).
-                La prima riga è considerata la riga di intestazione, pertanto verrà ignorata.
+            <p>
+                Column no. 1 must contain item quantity (quantities < 1 will be ignored), <br>
+                Column no. 2 must contain manufacturer name (missing fields will be ignored), <br>
+                Column no. 3 must contain manufacturer part number (missing PN will be ignored). <br>
+                The first row is considered table heading, hence will be ignored.
             </p>
             <form action="/orders/{{ order.id }}/edit/bulk-add" method="post" enctype="multipart/form-data" class="order-form">
                 <div class="form-row">

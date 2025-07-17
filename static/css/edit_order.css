@@ -163,11 +163,11 @@ form.inline-form {
     min-height: 100vh;
     gap: 2rem;
     flex-direction: row;
+    overflow: hidden;
 }
 
 .sidebar {
-    margin-top: 2rem;
-    width: 400px;
+    width: 350px;
     background-color: var(--bg);
     padding: 1.5rem;
     border-right: 2px solid var(--border);
@@ -177,11 +177,17 @@ form.inline-form {
     flex-direction: column;
     align-items: stretch;
     justify-content: flex-start;
+    overflow-y: auto;
+    flex-shrink: 0;
+    position: fixed;
+    height: 100vh;
 }
 
 .main-content {
+    margin-left: 350px;
     flex-grow: 1;
     padding: 2rem;
+    overflow-y: auto;
 }
 
 .actions {

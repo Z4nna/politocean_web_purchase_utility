@@ -15,16 +15,15 @@
     <link rel="stylesheet" href="/static/css/new_order.css" />
 </head>
 <body>
-    <!-- Replace inside your <body> -->
-    <h1 class="page-title">Crea un Nuovo Ordine</h1>
+    <h1 class="page-title">Create New Order</h1>
     <form action="/orders/new/submit" method="post" class="order-form">
         <div class="form-row">
-            <label for="description">Descrizione:</label>
+            <label for="description">Description:</label>
             <input type="text" id="description" name="description" required>
         </div>
 
         <div class="form-row">
-            <label for="area_division">Divisione:</label>
+            <label for="area_division">Division:</label>
             <select name="area_division" id="area_division" required>
                 {% for area in areas %}
                 <option value="{{area}}">{{area}}</option>
@@ -33,7 +32,7 @@
         </div>
 
         <div class="form-row">
-            <label for="area_sub_area">Sub-area:</label>
+            <label for="area_sub_area">Area:</label>
             <select name="area_sub_area" id="area_sub_area" required>
                 {% for sub_area in sub_areas %}
                 <option value="{{sub_area}}">{{sub_area}}</option>
@@ -41,7 +40,7 @@
             </select>
         </div>
 
-        <h3 class="section-title">Articoli</h3>
+        <h3 class="section-title">Items</h3>
         <div id="items-container">
             <div class="item-entry header-row">
                 <span>Proposal</span>
@@ -53,27 +52,28 @@
             </div>
         </div>
 
-        <button type="button" class="add-button" onclick="addItemEntry()">+ Aggiungi Articolo</button>
+        <button type="button" class="add-button" onclick="addItemEntry()">+ Add New Item</button>
 
         <br><br>
-        <button type="submit">Crea Ordine</button>
+        <button type="submit">Create Order</button>
     </form>
     <hr>
 
-    <h2 class="section-title">In alternativa, carica la BOM di KiCAD:</h2>
-    <p>La prima colonna dell'excel deve essere la quantità (quantità < 1 verranno ignorate), 
-        la seconda colonna il nome del produttore (nomi nulli verranno ignorati),
-        la terza colonna il part number del prodotto (P.N. nulli verranno ignorati).
-        La prima riga è considerata la riga di intestazione, pertanto verrà ignorata.
+    <h2 class="section-title">As an alternative, you may upload the BOM</h2>
+    <p>
+        Column no. 1 must contain item quantity (quantities < 1 will be ignored),
+        Column no. 2 must contain manufacturer name (missing fields will be ignored),
+        Column no. 3 must contain manufacturer part number (missing PN will be ignored).
+        The first row is considered table heading, hence will be ignored.
     </p>
     <form action="/orders/new/upload-kicad-bom" method="post" enctype="multipart/form-data" class="order-form">
         <div class="form-row">
-            <label for="description">Descrizione:</label>
+            <label for="description">Description:</label>
             <input type="text" id="description" name="description" required>
         </div>
 
         <div class="form-row">
-            <label for="area_division">Divisione:</label>
+            <label for="area_division">Division:</label>
             <select name="area_division" id="area_division" required>
                 {% for area in areas %}
                 <option value="{{area}}">{{area}}</option>
@@ -82,7 +82,7 @@
         </div>
 
         <div class="form-row">
-            <label for="area_sub_area">Sub-area:</label>
+            <label for="area_sub_area">Area:</label>
             <select name="area_sub_area" id="area_sub_area" required>
                 {% for sub_area in sub_areas %}
                 <option value="{{sub_area}}">{{sub_area}}</option>
