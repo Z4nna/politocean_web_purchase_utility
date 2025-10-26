@@ -74,6 +74,13 @@ pub async fn scale_order_handler (
     .rows_affected();
     println!("Scaled order {} by factor {}, updated {} rows", payload.order_id, payload.scale_factor, rows_updated);
 
+    sqlx::query!(
+        "UPDATE orders SET date = CURRENT_DATE WHERE id = $1",
+        payload.order_id
+    )
+    .execute(&app_state.connection_pool)
+    .await.map_err(|e| errors::AppError::Database(errors::DataError::FailedQuery(e.to_string())))?;
+
     Ok(axum::Json(serde_json::json!({
         "status": "success",
         "rows_updated": rows_updated
