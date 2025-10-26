@@ -50,3 +50,9 @@ pub struct ProfHomepageTemplate {
 pub struct CoffeePageTemplate {
     pub order_id: i32,
 }
+
+#[derive(Template)]
+#[template(path = "pages/order_arithmetic.html")]
+pub struct OrderArithmeticPageTemplate {
+
+}

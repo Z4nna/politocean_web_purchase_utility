@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Order Arithmetic</title>
+  <link rel="stylesheet" href="/static/css/palette.css" />
+  <link rel="stylesheet" href="/static/css/order_arithmetic.css" />
+  <script>
+    const theme = localStorage.getItem("theme");
+    document.documentElement.setAttribute("data-theme", theme === "light" ? "light" : "dark");
+  </script>
+</head>
+<body>
+  <h1 class="page-title">Order Arithmetic</h1>
+
+  <div class="order-form">
+    <div class="form-row">
+      <label for="operation">Select Operation:</label>
+      <select id="operation" onchange="updateForm()">
+        <option value="">-- Choose an Operation --</option>
+        <option value="scale">Scale Order</option>
+        <option value="merge">Merge Orders</option>
+        <option value="subtract">Subtract Orders</option>
+      </select>
+    </div>
+
+    <!-- Dynamic Form Container -->
+    <div id="operation-form" class="form-container"></div>
+
+    <!-- Result -->
+    <div id="result-message" class="result-message"></div>
+  </div>
+
+  <script src="/static/js/order_arithmetic.js"></script>
+</body>
+</html>

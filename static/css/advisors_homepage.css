@@ -125,7 +125,7 @@ form.inline-form {
     background-color: var(--danger);
 }
 
-.new-order-button {
+.order-actions {
     text-align: center;
     margin-top: 2rem;
 }
