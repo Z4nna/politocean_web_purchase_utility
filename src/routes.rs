@@ -39,8 +39,7 @@ fn orders_routes() -> Router<app::AppState> {
         .route("/orders/:id/coffee", get(edit_order::coffee_page_handler))
         .route("/orders/:id/get_bom_gen_status", get(edit_order::get_generate_bom_job_status_handler))
         .merge(edit_order_routes())
-        .route("/orders/arithmetic", get(order_operations::order_op_page_handler))
-        .route("/orders/scale", post(order_operations::scale_order_handler))
+        .merge(order_arithmetic_routes())
         .route_layer(middleware::from_fn(middlewares::auth::required_authentication)) // require authentication
 }
 
@@ -62,5 +61,8 @@ fn edit_order_routes() -> Router<app::AppState> {
 
 fn order_arithmetic_routes() -> Router<app::AppState> {
     Router::new()
+        .route("/orders/arithmetic", get(order_operations::order_op_page_handler))
+        .route("/orders/scale", post(order_operations::scale_order_handler))
+        .route("/orders/merge", post(order_operations::merge_order_handler))
         
 }

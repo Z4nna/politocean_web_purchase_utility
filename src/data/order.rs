@@ -214,8 +214,8 @@ pub async fn delete_order(pool: &PgPool, order_id: i32) -> Result<(), DataError>
 pub async fn add_item_to_order(
     pool: &PgPool,
     order_id: i32,
-    manifacturer: String,
-    manifacturer_pn: String,
+    manufacturer: String,
+    manufacturer_pn: String,
     quantity: i32,
     proposal: String,
     project: String,
@@ -228,8 +228,8 @@ pub async fn add_item_to_order(
         ON CONFLICT (order_id, manufacturer, manufacturer_pn)
         DO UPDATE SET quantity = order_items.quantity + EXCLUDED.quantity",
         order_id,
-        manifacturer,
-        manifacturer_pn,
+        manufacturer,
+        manufacturer_pn,
         quantity,
         proposal,
         project,

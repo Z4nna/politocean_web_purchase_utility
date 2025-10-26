@@ -74,15 +74,16 @@ async function submitScale() {
 }
 
 async function submitMerge() {
-  const source = document.getElementById("mergeSource").value;
-  const target = document.getElementById("mergeTarget").value;
-  const merge_options = document.getElementById("mergeOptions").value;
+  const source = parseInt(document.getElementById("mergeSource").value, 10);
+  const target = parseInt(document.getElementById("mergeTarget").value, 10);
+  const merge_options = 4; //document.getElementById("mergeOptions").value;
   if (source === target)
     return showResult(false, "", "Select two different orders.");
+  console.log("calling", source, target);
   const res = await fetch("/orders/merge", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ source_id: source, target_id: target, options: merge_options})
+    body: JSON.stringify({ source_id: source, target_id: target})
   });
   showResult(res.ok, "Orders merged successfully!", "Error merging orders.");
 }
