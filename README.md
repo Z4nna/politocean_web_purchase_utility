@@ -14,6 +14,9 @@ DATABASE_URL=postgres://yourid:yourpwd@yourdbip/yourdbname
 MOUSER_API_KEY=yourmouserapikey
 DIGIKEY_CLIENT_ID=yourdigikeyclientid
 DIGIKEY_CLIENT_SECRET=yourdigikeyclientsecret
+SMTP_USER=sender_email
+SMTP_PASS=sender_email_app_password
+ORDER_NOTIFICATION_RECIPIENT_EMAIL_ADDR=recipient_address
 ```
 ### SQLx migrations
 The SQLx migrations are located in the migrations folder.
