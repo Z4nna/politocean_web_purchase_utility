@@ -1,4 +1,4 @@
-use axum::{middleware, routing::{get, post, Route}, Router};
+use axum::{middleware, routing::{get, post}, Router};
 use crate::handlers::{advisors_homepage, auth, board_homepage, edit_order, new_order, prof_homepage, order_operations};
 use crate::models::app;
 use tower_http::services::ServeDir;

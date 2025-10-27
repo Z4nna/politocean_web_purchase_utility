@@ -1,4 +1,4 @@
-use crate::{data::errors::DataError, models::{app, templates::OrderArithmeticPageTemplate}};
+use crate::models::{templates::OrderArithmeticPageTemplate};
 use askama::Template;
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
@@ -10,10 +10,10 @@ use crate::{
 use axum::{
     extract::State, response::{Html, IntoResponse, Response}, Json
 };
-use tower_sessions::{session, Session};
+use tower_sessions::{Session};
 
 pub async fn order_op_page_handler(
-    State(app_state): State<AppState>,
+    State(_app_state): State<AppState>,
 ) -> Result<Response, errors::AppError>{
     
     let html_string = OrderArithmeticPageTemplate {
@@ -31,7 +31,7 @@ pub struct Order {
 
 pub async fn list_orders_handler(
     State(app_state): State<AppState>,
-    session: Session
+    _session: Session
 ) -> impl IntoResponse {
     // should change behavoir based on whether the calling user is board or not
     let orders = sqlx::query_as!(

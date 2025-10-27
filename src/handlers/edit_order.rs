@@ -1,10 +1,11 @@
 use askama::Template;
 use umya_spreadsheet::{Spreadsheet};
 use crate::{
+    handlers,
     data::{errors::{self, DataError}, excel, item, order, user}, models::{app::AppState, templates::{CoffeePageTemplate, EditOrderTemplate}}
 };
 use axum::{
-    body::{Body, Bytes}, extract::{Multipart, Path, State}, http::{header, HeaderValue, StatusCode}, response::{Html, IntoResponse, Redirect, Response}, Form
+    body::{Body, Bytes}, extract::{Multipart, Path, State}, http::{header, HeaderValue, StatusCode}, response::{Html, IntoResponse, Redirect, Response}, Form, Json
 };
 use tower_sessions::Session;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
@@ -151,7 +152,11 @@ pub async fn mark_order_unready_handler(State(app_state): State<AppState>,_sessi
     Ok(Redirect::to("/home").into_response())
 }
 
-pub async fn mark_order_confirmed_handler(State(app_state): State<AppState>,session: Session,Path(order_id): Path<i32>,) -> Result<Response, errors::AppError>{
+pub async fn mark_order_confirmed_handler(
+    State(app_state): State<AppState>,
+    session: Session,
+    Path(order_id): Path<i32>,
+) -> Result<Response, errors::AppError> {
     // check user is logged in
     let user_id = session.get::<i32>("authenticated_user_id")
     .await
@@ -163,15 +168,24 @@ pub async fn mark_order_confirmed_handler(State(app_state): State<AppState>,sess
             if let Ok(user_role) = user_role_result {
                 if user_role != "board" {
                     return Ok(Redirect::to("/home").into_response());
-                } else {
-                    order::mark_order_confirmed(&app_state.connection_pool, order_id).await?;
-                    return Ok(Redirect::to("/board/home").into_response());
                 }
+                let payload = handlers::prof_homepage::OrderNotificationRequest {
+                    order_id: order_id,
+                    user_id: id,
+                };
+                println!("calling notify prof handler");
+                let _notify_result = handlers::prof_homepage::notify_prof_order_confirmed_handler(
+                    State(app_state.clone()),
+                    session.clone(),
+                    Json(payload),
+                )
+                .await?;
+
+                return Ok(Redirect::to("/board/home").into_response());
             }
             Ok(Redirect::to("/home").into_response())
         }
         None => {
-            // If user is not logged in, redirect to login page
             Ok(Redirect::to("/").into_response())
         }
     }
@@ -222,10 +236,8 @@ pub async fn generate_bom_handler(
         jobs.insert(
             order_id,
             if result.is_ok() {
-                println!("Done.");
                 "done".to_string()
             } else {
-                println!("Failed.");
                 "failed".to_string()
             },
         );
@@ -237,7 +249,7 @@ pub async fn generate_bom_handler(
 pub async fn get_generate_bom_job_status_handler (
     State(app_state): State<AppState>,
     Path(order_id): Path<i32>
-) -> Result<Response, errors::AppError>{
+) -> Result<Response, errors::AppError> {
     let jobs = app_state.bom_jobs.lock().await;
     let status = jobs
         .get(&order_id)

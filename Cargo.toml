@@ -26,3 +26,6 @@ zip = "0.6"
 serde_path_to_error = "0.1.12"
 futures = "0.3"
 once_cell="1"
+lettre = { version = "0.11", default-features = false, features = ["tokio1", "tokio1-native-tls", "builder", "smtp-transport"] }
+mime = "0.3"
+base64 = "0.21"

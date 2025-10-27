@@ -22,6 +22,9 @@ pub enum DataError {
 
     #[error("Failed to convert from utf8: {0}")]
     Utf8Conversion(#[from] std::string::FromUtf8Error),
+
+    #[error("Failed to configure SMTP: {0}")]
+    Mail(String),
 }
 
 #[derive(Error, Debug)]
