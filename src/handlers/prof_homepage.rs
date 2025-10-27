@@ -196,8 +196,6 @@ pub async fn notify_prof_order_confirmed_handler(
         .credentials(creds)
         .build();
 
-    // Send the email
-    println!("sending email");
     mailer.send(email).await.map_err(|e| DataError::Mail(e.to_string()))?;
     println!("Email sent successfully!");
 

@@ -10,10 +10,11 @@ pub async fn database_connection() -> PgPool {
         .await
         .expect("Failed to connect to Postgres");
 
+    /*
     sqlx::migrate!()
         .run(&pool)
         .await
-        .expect("Failed to migrate");
+        .expect("Failed to migrate");*/
 
     pool
 }
