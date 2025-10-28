@@ -1,10 +1,11 @@
+use askama::Template;
 use axum::{Form, extract::{Query, State}, response::{Html, IntoResponse, Redirect, Response}};
 use serde::Deserialize;
 use tower_sessions::Session;
 use rand::RngCore;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 
-use crate::{data::errors, models::app::AppState};
+use crate::{data::errors, models::{app::AppState, templates}};
 
 pub async fn request_password_reset(
     State(app_state): State<AppState>,
@@ -59,43 +60,7 @@ pub async fn reset_password_page(
     .map_err(|e| errors::DataError::FailedQuery(e.to_string()))?;
 
     if let Some(_record) = record {
-        Ok(Html(format!(
-            r#"
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Reset Password</title>
-                <style>
-                    body {{
-                        font-family: sans-serif;
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        justify-content: center;
-                        height: 100vh;
-                        background-color: #f9fafb;
-                    }}
-                    form {{
-                        background: white;
-                        padding: 2rem;
-                        border-radius: 10px;
-                        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-                    }}
-                </style>
-            </head>
-            <body>
-                <h1>Reset Password</h1>
-                <form action="/reset-password" method="post">
-                    <input type="hidden" name="token" value="{}">
-                    <label>New Password:</label><br>
-                    <input type="password" name="new_password" required><br><br>
-                    <button type="submit">Change Password</button>
-                </form>
-            </body>
-            </html>
-            "#,
-            params.token
-        )).into_response())
+        Ok(Html(templates::ResetPasswordPageTemplate{token: params.token}.render().unwrap()).into_response())
     } else {
         Err(errors::AppError::Database(errors::DataError::TokenError("Token not found or expired".to_string())))
     }
@@ -135,7 +100,7 @@ pub async fn reset_password_submit(
             .execute(&app_state.connection_pool)
             .await.map_err(|e| errors::DataError::FailedQuery(e.to_string()))?;
 
-        Ok(Html("<h1>Password successfully reset!</h1>".to_string()).into_response())
+        Ok(Redirect::to("/home").into_response())
     } else {
         Err(errors::AppError::Database(errors::DataError::TokenError("Invalid token".to_string())))
     }
