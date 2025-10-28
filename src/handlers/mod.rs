@@ -5,3 +5,4 @@ pub mod edit_order;
 pub mod board_homepage;
 pub mod prof_homepage;
 pub mod order_operations;
+pub mod password_reset;

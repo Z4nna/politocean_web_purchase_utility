@@ -25,6 +25,9 @@ pub enum DataError {
 
     #[error("Failed to configure SMTP: {0}")]
     Mail(String),
+
+    #[error("Token error: {0}")]
+    TokenError(String),
 }
 
 #[derive(Error, Debug)]

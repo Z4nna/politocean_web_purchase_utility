@@ -1,5 +1,5 @@
 use axum::{middleware, routing::{get, post}, Router};
-use crate::handlers::{advisors_homepage, auth, board_homepage, edit_order, new_order, prof_homepage, order_operations};
+use crate::handlers::{advisors_homepage, auth, board_homepage, edit_order, new_order, order_operations, password_reset, prof_homepage};
 use crate::models::app;
 use tower_http::services::ServeDir;
 use crate::middlewares;
@@ -12,6 +12,9 @@ pub fn get_router(app_state: app::AppState) -> Router {
     .merge(auth_routes())
     .merge(home_routes())
     .merge(orders_routes())
+    .route("/reset-password", get(password_reset::reset_password_page))
+    .route("/reset-password", post(password_reset::reset_password_submit))
+    .route("/request-pwd-reset", get(password_reset::request_password_reset))
     .nest_service("/static", server_dir)
     .layer(middleware::from_fn(middlewares::auth::authenticate))
     .with_state(app_state)
@@ -64,5 +67,4 @@ fn order_arithmetic_routes() -> Router<app::AppState> {
         .route("/orders/arithmetic", get(order_operations::order_op_page_handler))
         .route("/orders/scale", post(order_operations::scale_order_handler))
         .route("/orders/merge", post(order_operations::merge_order_handler))
-        
 }

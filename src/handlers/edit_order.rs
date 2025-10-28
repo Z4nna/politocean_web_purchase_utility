@@ -359,7 +359,6 @@ pub async fn delete_order_handler(
     _session: Session,
     Path(order_id): Path<i32>,
 ) -> Result<Response, errors::AppError> {
-    println!("Handler called {}", order_id);
     order::delete_order(&app_state.connection_pool, order_id).await?;
     println!("Deleted order {}", order_id);
     Ok(Redirect::to("/home").into_response())
