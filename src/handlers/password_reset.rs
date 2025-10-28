@@ -1,11 +1,10 @@
 use axum::{Form, extract::{Query, State}, response::{Html, IntoResponse, Redirect, Response}};
-use lettre::transport::smtp::commands::Data;
 use serde::Deserialize;
 use tower_sessions::Session;
 use rand::RngCore;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 
-use crate::{data::errors::{self, AppError, DataError}, models::app::AppState};
+use crate::{data::errors, models::app::AppState};
 
 pub async fn request_password_reset(
     State(app_state): State<AppState>,
@@ -123,21 +122,21 @@ pub async fn reset_password_submit(
 
     if let Some(record) = record_opt {
         println!("valid user and token");
-        let hashed = bcrypt::hash(&form.new_password, 10).map_err(|e| DataError::Internal(e.to_string()))?; // implement your hashing function
+        let hashed = bcrypt::hash(&form.new_password, 10).map_err(|e| errors::DataError::Internal(e.to_string()))?; // implement your hashing function
         sqlx::query!(
             "UPDATE users SET password_hash = $1 WHERE id = $2",
             hashed,
             record.user_id
         )
         .execute(&app_state.connection_pool)
-        .await.map_err(|e| DataError::FailedQuery(e.to_string()))?;
+        .await.map_err(|e| errors::DataError::FailedQuery(e.to_string()))?;
 
         sqlx::query!("DELETE FROM password_reset_tokens WHERE token = $1", form.token)
             .execute(&app_state.connection_pool)
-            .await.map_err(|e| DataError::FailedQuery(e.to_string()))?;
+            .await.map_err(|e| errors::DataError::FailedQuery(e.to_string()))?;
 
         Ok(Html("<h1>Password successfully reset!</h1>".to_string()).into_response())
     } else {
-        Err(errors::AppError::Database(DataError::TokenError("Invalid token".to_string())))
+        Err(errors::AppError::Database(errors::DataError::TokenError("Invalid token".to_string())))
     }
 }

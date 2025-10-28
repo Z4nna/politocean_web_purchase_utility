@@ -96,31 +96,6 @@ impl ProductVariation {
     }
 }
 
-impl PartialEq for ProductVariation {
-    fn eq(&self, other: &Self) -> bool {
-        self.get_price(0) == other.get_price(0)
-    }
-}
-
-impl Eq for ProductVariation {}
-
-impl PartialOrd for ProductVariation {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for ProductVariation {
-    fn cmp(&self, other: &Self) -> Ordering {
-        let self_price = self.get_price(0).unwrap_or(f64::INFINITY);
-        let other_price = other.get_price(0).unwrap_or(f64::INFINITY);
-
-        self_price
-            .partial_cmp(&other_price)
-            .unwrap_or(Ordering::Equal)
-    }
-}
-
 #[derive(Deserialize, Debug, Serialize, Clone)]
 #[serde(rename_all = "PascalCase")]
 pub struct PriceBreak {

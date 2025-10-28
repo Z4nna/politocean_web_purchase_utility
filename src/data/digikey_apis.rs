@@ -3,13 +3,7 @@ use tokio::{sync::RwLock, time::Instant};
 use std::{sync::Arc, time::Duration};
 use dotenvy::dotenv;
 use crate::models::digikey_api_models::{
-    TokenResponse,
-    DigiKeyPart,
-    DigiKeyRequestBody,
-    FilterOptionsRequest,
-    SortOptions,
-    DigiKeySearchResult,
-    Product
+    DigiKeyPart, DigiKeyRequestBody, DigiKeySearchResult, FilterOptionsRequest, Product, ProductVariation, SortOptions, TokenResponse
 };
 use serde_path_to_error::deserialize;
 use once_cell::sync::Lazy;
@@ -76,7 +70,7 @@ pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &st
     dotenv().ok();
     let client_id = std::env::var("DIGIKEY_CLIENT_ID").expect("DIGIKEY_CLIENT_ID not set");
     println!("Searching for {} {} on Digikey", query_manufacturer, query_manufacturer_pn);
-    // future addition: check if old token is still valid, and in this case use the old one
+
     let token = digikey_get_token().await?;
     let client = Client::new();
     // Step 2: Perform product search
@@ -138,42 +132,51 @@ pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &st
         }
     };
 
-    let mut possible_products: Vec<Product> = Vec::new();
-    for product in myresponse.products {
-        if &product.manufacturer_product_number == query_manufacturer_pn {
-            possible_products.push(product);
-        }
-    }
+    let possible_products: Vec<Product> = myresponse
+    .products
+    .into_iter()
+    .filter(|p| p.manufacturer_product_number == *query_manufacturer_pn)
+    .collect();
 
-    if possible_products.len() > 1 {
-        // handle multiple products with the same manufacturer part number
-    }
-
-    // choose the right product variation, by selecting the variation with the lowest price and enough availability
-    let best_product = if possible_products.len() > 0 {
-        possible_products[0].clone()
-    } else {
+    if possible_products.is_empty() {
         return Ok(None);
-    };
-    let variation = match best_product
-    .product_variations
-    .iter()
-    .filter(|v| v.quantity_availablefor_package_type >= quantity && v.minimum_order_quantity <= quantity)
-    .min() {
-        Some(v) => v,
-        None => {
-            return Ok(None);
+    }
+
+    let mut valid_variations: Vec<(&Product, &ProductVariation)> = Vec::new();
+    for product in &possible_products {
+        for variation in &product.product_variations {
+            if variation.quantity_availablefor_package_type >= quantity
+                && variation.minimum_order_quantity <= quantity
+            {
+                valid_variations.push((product, variation));
+            }
         }
-    };
-    
+    }
+
+    if valid_variations.is_empty() {
+        return Ok(None);
+    }
+
+    let best_pair = valid_variations
+        .into_iter()
+        .min_by(|(_, v1), (_, v2)| {
+            let p1 = v1.get_price(quantity).unwrap_or(f64::INFINITY);
+            let p2 = v2.get_price(quantity).unwrap_or(f64::INFINITY);
+            p1.partial_cmp(&p2).unwrap_or(std::cmp::Ordering::Equal)
+        })
+        .unwrap();
+
+    let (best_product, best_variation) = best_pair;
+
     let product = DigiKeyPart {
-        manufacturer: possible_products[0].manufacturer.name.clone(),
-        manufacturer_pn: possible_products[0].manufacturer_product_number.clone(),
-        description: possible_products[0].description.product_description.clone(),
-        digikey_pn: variation.digi_key_product_number.clone(),
-        product_url: possible_products[0].product_url.clone(),
-        unit_price: variation.get_price(quantity).unwrap_or(0.0),
-        availability: possible_products[0].quantity_available,
+        manufacturer: best_product.manufacturer.name.clone(),
+        manufacturer_pn: best_product.manufacturer_product_number.clone(),
+        description: best_product.description.product_description.clone(),
+        digikey_pn: best_variation.digi_key_product_number.clone(),
+        product_url: best_product.product_url.clone(),
+        unit_price: best_variation.get_price(quantity).unwrap_or(0.0),
+        availability: best_product.quantity_available,
     };
+
     Ok(Some(product))
 }
