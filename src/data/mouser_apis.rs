@@ -35,7 +35,7 @@ pub async fn search_mouser(
     let mut search_response: Response;
 
     let mut attempts = 0;
-    let max_attempts = 20;
+    let max_attempts = 15;
     loop {
         search_response = client
         .post(&url)
