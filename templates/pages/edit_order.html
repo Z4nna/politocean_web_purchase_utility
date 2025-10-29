@@ -1,144 +1,142 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Dettagli Ordine</title>
-    <script>
-        const theme = localStorage.getItem("theme");
-        if (theme === "light") {
-            document.documentElement.setAttribute("data-theme", "light");
-        } else {
-            document.documentElement.setAttribute("data-theme", "dark");
-        }
-    </script>
-    <link rel="stylesheet" href="/static/css/palette.css" />
-    <link rel="stylesheet" href="/static/css/edit_order.css" />
-    <script src="/static/js/edit_order.js"></script>
-</head>
-<body>
-    <div class="page-wrapper">
+{% extends "base.html" %}
 
-        <aside class="sidebar">
-            <h2 class="section-title">Actions</h2>
-            <p>
-                Make sure to re-generate the BOM before downloading any generated file, 
-                as the changes applied since the last BOM generation will not be included!
-            </p>
-            <div class="actions">
-                <form action="/home" method="get" class="inline-form">
-                    <button type="submit" >🏠 Home</button>
-                </form>
-                <form action="/orders/{{ order.id }}/edit/generate-bom" method="post" class="inline-form">
-                    <button type="submit" onclick="showLoadingContainer()">📄 Generate BOM</button>
-                </form>
-                <form action="/orders/{{ order.id }}/edit/download-bom" method="post" class="inline-form">
-                    <button type="submit">⬇️ Download BOM</button>
-                </form>
-                <form action="/orders/{{ order.id}}/edit/download-digikey-cart" method="post" class="inline-form">
-                    <button type="submit">🛒 Download Digikey Cart</button>
-                </form>
-                <form action="/orders/{{ order.id}}/edit/create-mouser-cart" method="post" class="inline-form">
-                    <button type="submit">🛒 Download Mouser Cart</button>
-                </form>
+{% block title %}Order Details #{{ order.id }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/edit_order.css" />
+<script src="/static/js/edit_order.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+    <aside class="sidebar">
+        <h2 class="section-title">Actions</h2>
+        <p>
+            Make sure to re-generate the BOM before downloading any generated file, 
+            as the changes applied since the last BOM generation will not be included!
+        </p>
+        <div class="actions">
+            <form action="/home" method="get" class="inline-form">
+                <button type="submit">🏠 Home</button>
+            </form>
+            <form action="/orders/{{ order.id }}/edit/generate-bom" method="post" class="inline-form">
+                <button type="submit" onclick="showLoadingContainer()">📄 Generate BOM</button>
+            </form>
+            <form action="/orders/{{ order.id }}/edit/download-bom" method="post" class="inline-form">
+                <button type="submit">⬇️ Download BOM</button>
+            </form>
+            <form action="/orders/{{ order.id }}/edit/download-digikey-cart" method="post" class="inline-form">
+                <button type="submit">🛒 Download Digikey Cart</button>
+            </form>
+            <form action="/orders/{{ order.id }}/edit/create-mouser-cart" method="post" class="inline-form">
+                <button type="submit">🛒 Download Mouser Cart</button>
+            </form>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <h1 class="page-title">Order details #{{ order.id }}</h1>
+        <form action="/orders/{{ order.id }}/edit/submit" method="post" class="order-form">
+            <div class="form-row">
+                <label for="description">Description:</label>
+                <input type="text" id="description" name="description" value="{{ order.description }}" required>
             </div>
-        </aside>
 
-        <main class="main-content">
-            <h1 class="page-title">Order details #{{ order.id }}</h1>
-            <form action="/orders/{{ order.id }}/edit/submit" method="post" class="order-form">
-                <div class="form-row">
-                    <label for="description">Description:</label>
-                    <input type="text" id="description" name="description" value="{{ order.description }}" required>
-                </div>
+            <p class="order-info"><strong>Date:</strong> {{ order.get_date() }}</p>
 
-                <p class="order-info"><strong>Date:</strong> {{ order.get_date() }}</p>
-
-                <div class="form-row">
-                    <label for="area_division">Department:</label>
-                    <select name="area_division" id="area_division" required>
-                        {% for area in areas %}
-                        <option value="{{area}}" {% if area == order.area_division.as_str() %}selected{% endif %}>{{area}}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="form-row">
-                    <label for="area_sub_area">Division:</label>
-                    <select name="area_sub_area" id="area_sub_area" required>
-                        {% for sub_area in sub_areas %}
-                        <option value="{{sub_area}}" {% if sub_area == order.area_sub_area.as_str() %}selected{% endif %}>{{sub_area}}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <p class="order-info"><strong>State:</strong>
-                    {% if order.confirmed %}
-                        Confirmed
-                    {% else if order.ready %}
-                        Ready
-                    {% else %}
-                        Being prepared
-                    {% endif %}
-                </p>
-
-                <h3 class="section-title">Items</h3>
-                <div id="items-container">
-                    <div class="item-entry header-row">
-                        <span>Proposal</span>
-                        <span>Project</span>
-                        <span>Manufacturer</span>
-                        <span>P.N.</span>
-                        <span>Quantity</span>
-                        <span></span> <!-- for the remove button column -->
-                    </div>
-                </div>
-
-                <script>
-                    {% for item in items %}
-                    addItemEntry(
-                        "{{ item.proposal}}",
-                        "{{ item.project}}",
-                        "{{ item.manufacturer}}",
-                        "{{ item.manufacturer_pn}}",
-                        {{ item.quantity }}
-                    );
+            <div class="form-row">
+                <label for="area_division">Department:</label>
+                <select name="area_division" id="area_division" required>
+                    {% for area in areas %}
+                    <option value="{{ area }}" {% if area == order.area_division.as_str() %}selected{% endif %}>{{ area }}</option>
                     {% endfor %}
-                </script>
+                </select>
+            </div>
 
-                <button type="button" class="button add-button" onclick="addItemEntry()">➕ Add new item</button><br><br>
+            <div class="form-row">
+                <label for="area_sub_area">Division:</label>
+                <select name="area_sub_area" id="area_sub_area" required>
+                    {% for sub_area in sub_areas %}
+                    <option value="{{ sub_area }}" {% if sub_area == order.area_sub_area.as_str() %}selected{% endif %}>{{ sub_area }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-                <button type="submit" class="button submit-button">✅ Update order</button>
-            </form>
-            <hr>
-            <h2 class="section-title">Bulk Add</h2>
-            <p>
-                Column no. 1 must contain item quantity (quantities < 1 will be ignored), <br>
-                Column no. 2 must contain manufacturer name (missing fields will be ignored), <br>
-                Column no. 3 must contain manufacturer part number (missing PN will be ignored). <br>
-                The first row is considered table heading, hence will be ignored.
+            <p class="order-info"><strong>State:</strong>
+                {% if order.confirmed %}
+                    Confirmed
+                {% else if order.ready %}
+                    Ready
+                {% else %}
+                    Being prepared
+                {% endif %}
             </p>
-            <form action="/orders/{{ order.id }}/edit/bulk-add" method="post" enctype="multipart/form-data" class="order-form">
-                <div class="form-row">
-                    <label for="proposal">Proposal:</label>
-                    <select name="proposal" id="proposal" required>
-                        {% for proposal in proposals %}
-                        <option value="{{proposal}}">{{proposal}}</option>
-                        {% endfor %}
-                    </select>
-                </div>
 
-                <div class="form-row">
-                    <label for="project">Project:</label>
-                    <select name="project" id="project" required>
-                        {% for project in projects %}
-                        <option value="{{project}}">{{project}}</option>
-                        {% endfor %}
-                    </select>
+            <h3 class="section-title">Items</h3>
+            <div id="items-container">
+                <div class="item-entry header-row">
+                    <span>Proposal</span>
+                    <span>Project</span>
+                    <span>Manufacturer</span>
+                    <span>P.N.</span>
+                    <span>Quantity</span>
+                    <span></span>
                 </div>
+            </div>
 
-                <input type="file" name="file" class="file-input" accept=".xlsx">
-                <button type="submit">Upload</button>
-            </form>
-        </main>
-    </div>
-</body>
-</html>
+            <script>
+                {% for item in items %}
+                addItemEntry(
+                    "{{ item.proposal }}",
+                    "{{ item.project }}",
+                    "{{ item.manufacturer }}",
+                    "{{ item.manufacturer_pn }}",
+                    {{ item.quantity }}
+                );
+                {% endfor %}
+            </script>
+
+            <button type="button" class="button add-button" onclick="addItemEntry()">➕ Add new item</button><br><br>
+            <button type="submit" class="button submit-button">✅ Update order</button>
+        </form>
+
+        <hr>
+        <h2 class="section-title">Bulk Add</h2>
+        <p>
+            Column no. 1 must contain item quantity (quantities < 1 will be ignored), <br>
+            Column no. 2 must contain manufacturer name (missing fields will be ignored), <br>
+            Column no. 3 must contain manufacturer part number (missing PN will be ignored). <br>
+            The first row is considered table heading, hence will be ignored.
+        </p>
+
+        <form action="/orders/{{ order.id }}/edit/bulk-add" method="post" enctype="multipart/form-data" class="order-form">
+            <div class="form-row">
+                <label for="proposal">Proposal:</label>
+                <select name="proposal" id="proposal" required>
+                    {% for proposal in proposals %}
+                    <option value="{{ proposal }}">{{ proposal }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="project">Project:</label>
+                <select name="project" id="project" required>
+                    {% for project in projects %}
+                    <option value="{{ project }}">{{ project }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <input type="file" name="file" class="file-input" accept=".xlsx">
+            <button type="submit">Upload</button>
+        </form>
+    </main>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/edit_order.js"></script>
+{% endblock %}

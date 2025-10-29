@@ -2,3 +2,4 @@
 target/
 .env
 Cargo.lock
+migrations/20251029212317_test_role_permission.sql

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}My App{% endblock %}</title>
+
+    <link rel="stylesheet" href="/static/css/palette.css">
+    <link rel="stylesheet" href="/static/css/base.css">
+    <script>
+        const theme = localStorage.getItem("theme");
+            if (theme === "light") {
+                document.documentElement.setAttribute("data-theme", "light");
+            } else {
+                document.documentElement.setAttribute("data-theme", "dark");
+            }
+    </script>
+    
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header>
+        <h1>PoliTOcean</h1>
+        <div class="menu-toggle" onclick="toggleMenu()">☰</div>
+        <nav id="menu">
+            <a href="/home">Orders</a>
+            <a href="/board/home">Board reserved area</a>
+            <a href="/board/users">Manage users</a>
+            <a href="/settings">Settings</a>
+            <a onclick="toggleTheme()">Toggle Theme</a>
+        </nav>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('menu');
+            const toggle = document.querySelector('.menu-toggle');
+            menu.classList.toggle('active');
+            toggle.classList.toggle('active');
+        }
+
+        document.addEventListener('click', (event) => {
+            const menu = document.getElementById('menu');
+            const toggle = document.querySelector('.menu-toggle');
+            if (!menu.contains(event.target) && !toggle.contains(event.target)) {
+                menu.classList.remove('active');
+                toggle.classList.remove('active');
+            }
+        });
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isLight = html.getAttribute("data-theme") === "light";
+            if (isLight) {
+                html.removeAttribute("data-theme");
+                localStorage.setItem("theme", "dark");
+            } else {
+                html.setAttribute("data-theme", "light");
+                localStorage.setItem("theme", "light");
+            }
+        }
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

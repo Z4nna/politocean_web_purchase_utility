@@ -1,69 +1,61 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Ordini</title>
-    <script>
-        const theme = localStorage.getItem("theme");
-        if (theme === "light") {
-            document.documentElement.setAttribute("data-theme", "light");
-        } else {
-            document.documentElement.setAttribute("data-theme", "dark");
-        }
-    </script>
-    <link rel="stylesheet" href="/static/css/palette.css" />
-    <link rel="stylesheet" href="/static/css/advisors_homepage.css" />
-</head>
-<body>
-    <div class="container">
-        <h1 class="page-title">Orders List</h1>
+{% extends "base.html" %}
 
-        <div class="table-wrapper">
-            <table class="orders-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Description</th>
-                        <th>Date</th>
-                        <th>State</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for order in orders %}
-                    <tr>
-                        <td>{{ order.id }}</td>
-                        <td>{{ order.description }}</td>
-                        <td>{{ order.get_date() }}</td>
-                        <td class="status-cell" style="background-color: {{ order.get_bg_color() }};">
-                            {{ order.get_status() }}
-                        </td>
-                        <td class="actions-cell">
-                            {% if order.confirmed == false %}
-                                <form action="/orders/{{ order.id }}/edit" class="inline-form action" method="get">
-                                    <button type="submit">Edit</button>
-                                </form>
-                                <form action="/orders/{{ order.id }}/confirm" method="post" class="inline-form action">
-                                    <button type="submit" class="button">Mark as confirmed</button>
-                                </form>
-                            {% else %}
-                                <form action="/orders/{{ order.id }}/unconfirm" method="post" class="inline-form action">
-                                    <button type="submit" class="button">Mark as unconfirmed</button>
-                                </form>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+{% block title %}Orders{% endblock %}
 
-        <hr>
+{% block head %}
+<link rel="stylesheet" href="/static/css/palette.css" />
+<link rel="stylesheet" href="/static/css/advisors_homepage.css" />
+{% endblock %}
 
-        <div>
-            <a href="/home" class="button">Go back to advisors area</a>
-            <a href="">Merge orders</a>
-        </div>
+{% block content %}
+<div class="container">
+    <h1 class="page-title">Orders List</h1>
 
+    <div class="table-wrapper">
+        <table class="orders-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Description</th>
+                    <th>Date</th>
+                    <th>State</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ order.id }}</td>
+                    <td>{{ order.description }}</td>
+                    <td>{{ order.get_date() }}</td>
+                    <td class="status-cell" style="background-color: {{ order.get_bg_color() }};">
+                        {{ order.get_status() }}
+                    </td>
+                    <td class="actions-cell">
+                        {% if !order.confirmed %}
+                            <form action="/orders/{{ order.id }}/edit" class="inline-form action" method="get">
+                                <button type="submit" class="button">Edit</button>
+                            </form>
+                            <form action="/orders/{{ order.id }}/confirm" method="post" class="inline-form action">
+                                <button type="submit" class="button">Mark as confirmed</button>
+                            </form>
+                        {% else %}
+                            <form action="/orders/{{ order.id }}/unconfirm" method="post" class="inline-form action">
+                                <button type="submit" class="button">Mark as unconfirmed</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-</body>
-</html>
+
+    <hr>
+
+    <div class="order-actions">
+        <a href="/home" class="button">Go back to advisors area</a>
+        <a href="/orders/arithmetic" class="button">Order operations</a>
+    </div>
+</div>
+{% endblock %}

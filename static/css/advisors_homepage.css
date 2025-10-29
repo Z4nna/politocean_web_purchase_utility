@@ -133,3 +133,7 @@ form.inline-form {
 a {
     color: var(--text);
 }
+
+header {
+    border-radius: 12px;
+}

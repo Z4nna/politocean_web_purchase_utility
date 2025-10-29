@@ -1,0 +1,76 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+/* ===== HEADER ===== */
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    background-color: var(--bg, #1e2a38);
+    color: var(--accent-color);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 6.5vh;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+/* ===== HAMBURGER BUTTON ===== */
+.menu-toggle {
+    cursor: pointer;
+    font-size: 1.6rem;
+    user-select: none;
+    transition: transform 0.3s ease;
+}
+
+.menu-toggle.active {
+    transform: rotate(90deg);
+}
+
+/* ===== MENU ===== */
+nav#menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: var(--bg, #1e2a38);
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+nav#menu.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* ===== MENU LINKS ===== */
+nav#menu a {
+    display: block;
+    padding: 12px 20px;
+    text-decoration: none;
+    color: var(--text);
+    transition: background-color 0.2s ease;
+}
+
+nav#menu a:hover {
+    background-color: var(--accent-color, #3a4b5a);
+}
+
+main {
+    padding-top: 6.5vh;
+}

@@ -1,116 +1,113 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Nuovo Ordine</title>
-    <script>
-        const theme = localStorage.getItem("theme");
-        if (theme === "light") {
-            document.documentElement.setAttribute("data-theme", "light");
-        } else {
-            document.documentElement.setAttribute("data-theme", "dark");
-        }
-    </script>
-    <link rel="stylesheet" href="/static/css/palette.css" />
-    <link rel="stylesheet" href="/static/css/edit_order.css" />
-    <link rel="stylesheet" href="/static/css/new_order.css" />
-</head>
-<body>
-    <h1 class="page-title">Create New Order</h1>
-    <form action="/orders/new/submit" method="post" class="order-form">
-        <div class="form-row">
-            <label for="description">Description:</label>
-            <input type="text" id="description" name="description" required>
+{% extends "base.html" %}
+
+{% block title %}Create New Order{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/edit_order.css" />
+<link rel="stylesheet" href="/static/css/new_order.css" />
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Create New Order</h1>
+
+<form action="/orders/new/submit" method="post" class="order-form">
+    <div class="form-row">
+        <label for="description">Description:</label>
+        <input type="text" id="description" name="description" required>
+    </div>
+
+    <div class="form-row">
+        <label for="area_division">Department:</label>
+        <select name="area_division" id="area_division" required>
+            {% for area in areas %}
+            <option value="{{ area }}">{{ area }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-row">
+        <label for="area_sub_area">Division:</label>
+        <select name="area_sub_area" id="area_sub_area" required>
+            {% for sub_area in sub_areas %}
+            <option value="{{ sub_area }}">{{ sub_area }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <h3 class="section-title">Items</h3>
+    <div id="items-container">
+        <div class="item-entry header-row">
+            <span>Proposal</span>
+            <span>Project</span>
+            <span>Manufacturer</span>
+            <span>P.N.</span>
+            <span>Quantity</span>
+            <span></span> <!-- for remove button column -->
         </div>
+    </div>
 
-        <div class="form-row">
-            <label for="area_division">Department:</label>
-            <select name="area_division" id="area_division" required>
-                {% for area in areas %}
-                <option value="{{area}}">{{area}}</option>
-                {% endfor %}
-            </select>
-        </div>
+    <button type="button" class="add-button" onclick="addItemEntry()">+ Add New Item</button>
+    <br><br>
+    <button type="submit">Create Order</button>
+</form>
 
-        <div class="form-row">
-            <label for="area_sub_area">Division:</label>
-            <select name="area_sub_area" id="area_sub_area" required>
-                {% for sub_area in sub_areas %}
-                <option value="{{sub_area}}">{{sub_area}}</option>
-                {% endfor %}
-            </select>
-        </div>
+<hr>
 
-        <h3 class="section-title">Items</h3>
-        <div id="items-container">
-            <div class="item-entry header-row">
-                <span>Proposal</span>
-                <span>Project</span>
-                <span>Manufacturer</span>
-                <span>P.N.</span>
-                <span>Quantity</span>
-                <span></span> <!-- for the remove button column -->
-            </div>
-        </div>
+<h2 class="section-title">As an alternative, you may upload the BOM</h2>
+<p>
+    Column no. 1 must contain item quantity (quantities < 1 will be ignored),<br>
+    Column no. 2 must contain manufacturer name (missing fields will be ignored),<br>
+    Column no. 3 must contain manufacturer part number (missing PN will be ignored).<br>
+    The first row is considered table heading, hence will be ignored.
+</p>
 
-        <button type="button" class="add-button" onclick="addItemEntry()">+ Add New Item</button>
+<form action="/orders/new/upload-kicad-bom" method="post" enctype="multipart/form-data" class="order-form">
+    <div class="form-row">
+        <label for="description">Description:</label>
+        <input type="text" id="description" name="description" required>
+    </div>
 
-        <br><br>
-        <button type="submit">Create Order</button>
-    </form>
-    <hr>
+    <div class="form-row">
+        <label for="area_division">Department:</label>
+        <select name="area_division" id="area_division" required>
+            {% for area in areas %}
+            <option value="{{ area }}">{{ area }}</option>
+            {% endfor %}
+        </select>
+    </div>
 
-    <h2 class="section-title">As an alternative, you may upload the BOM</h2>
-    <p>
-        Column no. 1 must contain item quantity (quantities < 1 will be ignored),
-        Column no. 2 must contain manufacturer name (missing fields will be ignored),
-        Column no. 3 must contain manufacturer part number (missing PN will be ignored).
-        The first row is considered table heading, hence will be ignored.
-    </p>
-    <form action="/orders/new/upload-kicad-bom" method="post" enctype="multipart/form-data" class="order-form">
-        <div class="form-row">
-            <label for="description">Description:</label>
-            <input type="text" id="description" name="description" required>
-        </div>
+    <div class="form-row">
+        <label for="area_sub_area">Division:</label>
+        <select name="area_sub_area" id="area_sub_area" required>
+            {% for sub_area in sub_areas %}
+            <option value="{{ sub_area }}">{{ sub_area }}</option>
+            {% endfor %}
+        </select>
+    </div>
 
-        <div class="form-row">
-            <label for="area_division">Department:</label>
-            <select name="area_division" id="area_division" required>
-                {% for area in areas %}
-                <option value="{{area}}">{{area}}</option>
-                {% endfor %}
-            </select>
-        </div>
+    <div class="form-row">
+        <label for="proposal">Proposal:</label>
+        <select name="proposal" id="proposal" required>
+            {% for proposal in proposals %}
+            <option value="{{ proposal }}">{{ proposal }}</option>
+            {% endfor %}
+        </select>
+    </div>
 
-        <div class="form-row">
-            <label for="area_sub_area">Division:</label>
-            <select name="area_sub_area" id="area_sub_area" required>
-                {% for sub_area in sub_areas %}
-                <option value="{{sub_area}}">{{sub_area}}</option>
-                {% endfor %}
-            </select>
-        </div>
+    <div class="form-row">
+        <label for="project">Project:</label>
+        <select name="project" id="project" required>
+            {% for project in projects %}
+            <option value="{{ project }}">{{ project }}</option>
+            {% endfor %}
+        </select>
+    </div>
 
-        <div class="form-row">
-            <label for="proposal">Proposal:</label>
-            <select name="proposal" id="proposal" required>
-                {% for proposal in proposals %}
-                <option value="{{proposal}}">{{proposal}}</option>
-                {% endfor %}
-            </select>
-        </div>
+    <input type="file" name="file" class="file-input" accept=".xlsx">
+    <button type="submit">Upload</button>
+</form>
+{% endblock %}
 
-        <div class="form-row">
-            <label for="project">Project:</label>
-            <select name="project" id="project" required>
-                {% for project in projects %}
-                <option value="{{project}}">{{project}}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <input type="file" name="file" class="file-input" accept=".xlsx">
-        <button type="submit">Upload</button>
-    </form>
-    <script src="/static/js/new_order.js"></script>
-</body>
-</html>
+{% block scripts %}
+<script src="/static/js/new_order.js"></script>
+{% endblock %}
