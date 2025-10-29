@@ -87,7 +87,7 @@ pub async fn reset_password_submit(
 
     if let Some(record) = record_opt {
         println!("valid user and token");
-        let hashed = bcrypt::hash(&form.new_password, 10).map_err(|e| errors::DataError::Internal(e.to_string()))?; // implement your hashing function
+        let hashed = bcrypt::hash(form.new_password.trim(), 10).map_err(|e| errors::DataError::Internal(e.to_string()))?; // implement your hashing function
         sqlx::query!(
             "UPDATE users SET password_hash = $1 WHERE id = $2",
             hashed,

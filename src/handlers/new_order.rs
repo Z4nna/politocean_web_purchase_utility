@@ -59,9 +59,9 @@ pub async fn submit_order_handler(
     .get::<i32>("authenticated_user_id")
     .await
     .map_err(|e| errors::AppError::Session(e))?.unwrap();
-    let description = user_form.get("description").unwrap().to_string();
-    let area_division = user_form.get("area_division").unwrap().to_string();
-    let area_sub_area = user_form.get("area_sub_area").unwrap().to_string();
+    let description = user_form.get("description").unwrap().trim().to_string();
+    let area_division = user_form.get("area_division").unwrap().trim().to_string();
+    let area_sub_area = user_form.get("area_sub_area").unwrap().trim().to_string();
     let order_id = order::create_order(&app_state.connection_pool, order_author_id, description, area_division, area_sub_area).await?;
 
     let mut indices: HashSet<i32> = HashSet::new();
@@ -86,10 +86,10 @@ pub async fn submit_order_handler(
         let proposal_key = format!("items_proposal_{}", index);
         let project_key = format!("items_project_{}", index);
 
-        let manifacturer = user_form.get(&man_key).unwrap_or(&"".to_string()).to_string();
-        let manifacturer_pn = user_form.get(&pn_key).unwrap_or(&"".to_string()).to_string();
-        let proposal = user_form.get(&proposal_key).unwrap_or(&"Elettronica generale".to_string()).to_string();
-        let project = user_form.get(&project_key).unwrap_or(&"Varie per lab".to_string()).to_string();
+        let manifacturer = user_form.get(&man_key).unwrap_or(&"".to_string()).trim().to_string();
+        let manifacturer_pn = user_form.get(&pn_key).unwrap_or(&"".to_string()).trim().to_string();
+        let proposal = user_form.get(&proposal_key).unwrap_or(&"Elettronica generale".to_string()).trim().to_string();
+        let project = user_form.get(&project_key).unwrap_or(&"Varie per lab".to_string()).trim().to_string();
         let quantity = user_form
             .get(&quantity_key)
             .unwrap()

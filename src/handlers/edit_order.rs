@@ -63,9 +63,9 @@ pub async fn new_order_with_id_handler(
     .get::<i32>("authenticated_user_id")
     .await
     .map_err(|e| errors::AppError::Session(e))?.unwrap();
-    let description = user_form.get("description").unwrap().to_string();
-    let area_division = user_form.get("area_division").unwrap().to_string();
-    let area_sub_area = user_form.get("area_sub_area").unwrap().to_string();
+    let description = user_form.get("description").unwrap().trim().to_string();
+    let area_division = user_form.get("area_division").unwrap().trim().to_string();
+    let area_sub_area = user_form.get("area_sub_area").unwrap().trim().to_string();
     order::create_order_with_id(
         &app_state.connection_pool, 
         order_id, 
@@ -96,10 +96,10 @@ pub async fn new_order_with_id_handler(
         let proposal_key = format!("items_proposal_{}", index);
         let project_key = format!("items_project_{}", index);
 
-        let manifacturer = user_form.get(&man_key).unwrap_or(&"".to_string()).to_string();
-        let manifacturer_pn = user_form.get(&pn_key).unwrap_or(&"".to_string()).to_string();
-        let proposal = user_form.get(&proposal_key).unwrap_or(&"Elettronica generale".to_string()).to_string();
-        let project = user_form.get(&project_key).unwrap_or(&"Varie per lab".to_string()).to_string();
+        let manifacturer = user_form.get(&man_key).unwrap_or(&"".to_string()).trim().to_string();
+        let manifacturer_pn = user_form.get(&pn_key).unwrap_or(&"".to_string()).trim().to_string();
+        let proposal = user_form.get(&proposal_key).unwrap_or(&"Elettronica generale".to_string()).trim().to_string();
+        let project = user_form.get(&project_key).unwrap_or(&"Varie per lab".to_string()).trim().to_string();
         let quantity = user_form
             .get(&quantity_key)
             .unwrap()
@@ -131,7 +131,6 @@ pub async fn submit_order_handler(
 ) -> Result<Response, errors::AppError>{
     // delete old order
     order::delete_order(&app_state.connection_pool, order_id).await?;
-    println!("Deleted order {}", order_id);
     // forward request to new order
     let response = new_order_with_id_handler(State(app_state), session, Form(form), order_id).await;
     match response {
@@ -268,7 +267,8 @@ pub async fn get_generate_bom_job_status_handler (
 pub async fn coffee_page_handler(
     State(_app_state): State<AppState>,
     _session: Session,
-    Path(order_id): Path<i32>) -> Result<Response, errors::AppError> {
+    Path(order_id): Path<i32>
+) -> Result<Response, errors::AppError> {
     let html_string = CoffeePageTemplate{order_id: order_id}.render().unwrap();
     Ok(Html(html_string).into_response())
 }
