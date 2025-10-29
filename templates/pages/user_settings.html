@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}User Settings{% endblock %}
+
+{% block content %}
+<h1>User Settings</h1>
+
+<form action="/request-pwd-reset" method="get">
+    <button type="submit">Change password</button>
+</form>
+{% endblock %}

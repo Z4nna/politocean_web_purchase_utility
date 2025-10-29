@@ -1,5 +1,5 @@
 use axum::{middleware, routing::{get, post}, Router};
-use crate::handlers::{advisors_homepage, auth, board_homepage, edit_order, new_order, order_operations, password_reset, prof_homepage};
+use crate::handlers::{advisors_homepage, auth, board_homepage, edit_order, new_order, order_operations, password_reset, prof_homepage, user_settings};
 use crate::models::app;
 use tower_http::services::ServeDir;
 use crate::middlewares;
@@ -30,6 +30,7 @@ fn home_routes() -> Router<app::AppState> {
         .route("/home", get(advisors_homepage::advisors_homepage_handler))
         .route("/board/home", get(board_homepage::board_homepage_handler))
         .route("/prof", get(prof_homepage::prof_homepage_handler))
+        .route("/settings", get(user_settings::user_settings_handler))
         .route_layer(middleware::from_fn(middlewares::auth::required_authentication))
 }
 

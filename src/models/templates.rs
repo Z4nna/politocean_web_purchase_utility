@@ -62,3 +62,8 @@ pub struct OrderArithmeticPageTemplate {
 pub struct ResetPasswordPageTemplate {
     pub token: String,
 }
+
+#[derive(Template)]
+#[template(path = "pages/user_settings.html")]
+pub struct UserSettingsPageTemplate {
+}
