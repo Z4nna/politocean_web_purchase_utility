@@ -35,7 +35,7 @@ pub async fn search_mouser(
     let mut search_response: Response;
 
     let mut attempts = 0;
-    let max_attempts = 15;
+    let max_attempts = 16;
     loop {
         search_response = client
         .post(&url)
@@ -92,15 +92,16 @@ pub async fn search_mouser(
             for part in search_results.parts {
                 let manufacturer = part.manufacturer.unwrap_or_default();
                 let manufacturer_pn = part.manufacturer_part_number.unwrap_or_default();
+                let mouser_pn = part.mouser_part_number.unwrap_or_default();
                 // assure we return only the requested item
-                if manufacturer_pn != query_manufacturer_pn {
+                if manufacturer_pn != query_manufacturer_pn && mouser_pn != query_manufacturer_pn {
                     continue;
                 }
                 let mouser_part = MouserPart {
                     manufacturer: manufacturer,
                     manufacturer_pn: manufacturer_pn,
                     description: part.description.unwrap_or_default(),
-                    mouser_pn: part.mouser_part_number.unwrap_or_default(),
+                    mouser_pn: mouser_pn,
                     product_url: part.product_detail_url.unwrap_or_default(),
                     unit_price: match part.price_breaks {
                         Some(price_breaks) => {

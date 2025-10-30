@@ -66,7 +66,11 @@ async fn digikey_get_token() -> Result<String, Box<dyn std::error::Error + Send 
     Ok(token.access_token)
 }
 
-pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &str, quantity: u32,) -> Result<Option<DigiKeyPart>, Box<dyn std::error::Error + Send + Sync>> {
+pub async fn digikey_search(
+    query_manufacturer: &str, 
+    query_manufacturer_pn: &str, 
+    quantity: u32
+) -> Result<Option<DigiKeyPart>, Box<dyn std::error::Error + Send + Sync>> {
     dotenv().ok();
     let client_id = std::env::var("DIGIKEY_CLIENT_ID").expect("DIGIKEY_CLIENT_ID not set");
     println!("Searching for {} {} on Digikey", query_manufacturer, query_manufacturer_pn);
@@ -132,11 +136,7 @@ pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &st
         }
     };
 
-    let possible_products: Vec<Product> = myresponse
-    .products
-    .into_iter()
-    .filter(|p| p.manufacturer_product_number == *query_manufacturer_pn)
-    .collect();
+    let possible_products: Vec<Product> = myresponse.products;
 
     if possible_products.is_empty() {
         return Ok(None);
@@ -147,6 +147,7 @@ pub async fn digikey_search(query_manufacturer: &str, query_manufacturer_pn: &st
         for variation in &product.product_variations {
             if variation.quantity_availablefor_package_type >= quantity
                 && variation.minimum_order_quantity <= quantity
+                && (&product.manufacturer_product_number == query_manufacturer_pn || query_manufacturer_pn == variation.digi_key_product_number)
             {
                 valid_variations.push((product, variation));
             }
