@@ -1,10 +1,8 @@
-use crate::models::{templates::OrderArithmeticPageTemplate};
+use crate::models::{order_operations::{MergeOrderOption, MergeOrderRequest}, templates::OrderArithmeticPageTemplate};
 use askama::Template;
 use futures::future::join_all;
-use serde::{Deserialize, Serialize};
-use sqlx::prelude::FromRow;
 use crate::{
-    models::app::AppState,
+    models::{app::AppState, order_operations::{Order, ScaleOrderRequest}},
     data::{errors, order},
 };
 use axum::{
@@ -22,13 +20,6 @@ pub async fn order_op_page_handler(
     Ok(Html(html_string).into_response())
 }
 
-#[derive(Serialize, Deserialize, FromRow)]
-pub struct Order {
-    id: i32,
-    description: String,
-    author_id: i32,
-}
-
 pub async fn list_orders_handler(
     State(app_state): State<AppState>,
     _session: Session
@@ -44,12 +35,6 @@ pub async fn list_orders_handler(
     .unwrap_or_default();
 
     Json(orders)
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct ScaleOrderRequest {
-    order_id: i32,
-    scale_factor: f64,
 }
 
 pub async fn scale_order_handler (
@@ -89,21 +74,6 @@ pub async fn scale_order_handler (
         "status": "success",
         "rows_updated": rows_updated
     })))
-}
-
-#[derive(Serialize, Deserialize)]
-pub enum MergeOrderOption {
-    KeepSrcQuantity = 0,
-    KeepTargetQuantity = 1,
-    KeepHighestQuantity = 2,
-    KeepLowestQuantity = 3,
-    AddQuantities = 4
-}
-#[derive(Serialize, Deserialize)]
-pub struct MergeOrderRequest {
-    source_id: i32,
-    target_id: i32,
-    //options: MergeOrderOption
 }
 
 pub async fn merge_order_handler (

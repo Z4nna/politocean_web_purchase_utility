@@ -1,11 +1,10 @@
 use askama::Template;
 use axum::{Form, extract::{Query, State}, response::{Html, IntoResponse, Redirect, Response}};
-use serde::Deserialize;
 use tower_sessions::Session;
 use rand::RngCore;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 
-use crate::{data::errors, models::{app::AppState, templates}};
+use crate::{data::errors, models::{app::AppState, password_reset::{ResetForm, ResetQuery}, templates}};
 
 pub async fn request_password_reset(
     State(app_state): State<AppState>,
@@ -41,11 +40,6 @@ pub async fn request_password_reset(
     Err(errors::AppError::Database(errors::DataError::Internal("user not logged in while attempting password reset".to_string())))
 }
 
-#[derive(Deserialize)]
-pub struct ResetQuery {
-    token: String,
-}
-
 pub async fn reset_password_page(
     State(app_state): State<AppState>,
     Query(params): Query<ResetQuery>,
@@ -64,12 +58,6 @@ pub async fn reset_password_page(
     } else {
         Err(errors::AppError::Database(errors::DataError::TokenError("Token not found or expired".to_string())))
     }
-}
-
-#[derive(Deserialize)]
-pub struct ResetForm {
-    token: String,
-    new_password: String,
 }
 
 pub async fn reset_password_submit(
