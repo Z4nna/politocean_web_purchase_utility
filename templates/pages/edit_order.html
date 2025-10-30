@@ -8,6 +8,17 @@
 {% endblock %}
 
 {% block content %}
+<select id="project-template" style="display: none;">
+    {% for project in projects %}
+    <option value="{{ project }}">{{ project }}</option>
+    {% endfor %}
+</select>
+<select id="proposal-template" style="display: none;">
+    {% for proposal in proposals %}
+    <option value="{{ proposal }}">{{ proposal }}</option>
+    {% endfor %}
+</select>
+
 <div class="page-wrapper">
 
     <aside class="sidebar">
@@ -138,5 +149,4 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/edit_order.js"></script>
 {% endblock %}

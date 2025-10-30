@@ -1,19 +1,54 @@
 let itemIndex = 0;
 
-function addItemEntry() {
+function addItemEntry(proposal = "", project = "", manufacturer = "", manufacturerPn = "", quantity = 1) {
     const container = document.getElementById('items-container');
 
     const div = document.createElement('div');
     div.className = 'item-entry';
-    div.innerHTML = `
-        <input type="text" name="items_proposal_${itemIndex}" value = "Sensoristica AUV" required />
-        <input type="text" name="items_project_${itemIndex}" value = "Nereo" required />
-        
-        <input type="text" name="items_manifacturer_${itemIndex}" required />
-        <input type="text" name="items_manifacturer_pn_${itemIndex}" required />
-        <input type="number" name="items_quantity_${itemIndex}" value = "1" required />
-        <button type="button" class="delete-button" onclick="removeItemEntry(this)">×</button>
-    `;
+
+    const proposalSelect = document.createElement('select');
+    proposalSelect.name = `items_proposal_${itemIndex}`;
+    proposalSelect.value = proposal;
+    proposalSelect.required = true;
+    proposalSelect.innerHTML = document.getElementById('proposal-template').innerHTML;
+
+    const projectSelect = document.createElement('select');
+    projectSelect.name = `items_project_${itemIndex}`;
+    projectSelect.value = project;
+    projectSelect.required = true;
+    projectSelect.innerHTML = document.getElementById('project-template').innerHTML;
+
+    const manufacturerInput = document.createElement('input');
+    manufacturerInput.type = 'text';
+    manufacturerInput.value = manufacturer;
+    manufacturerInput.name = `items_manufacturer_${itemIndex}`;
+    manufacturerInput.required = true;
+
+    const manufacturerPnInput = document.createElement('input');
+    manufacturerPnInput.type = 'text';
+    manufacturerPnInput.value = manufacturerPn;
+    manufacturerPnInput.name = `items_manufacturer_pn_${itemIndex}`;
+    manufacturerPnInput.required = true;
+
+    const quantityInput = document.createElement('input');
+    quantityInput.type = 'number';
+    quantityInput.name = `items_quantity_${itemIndex}`;
+    quantityInput.value = quantity;
+    quantityInput.required = true;
+
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'delete-button';
+    deleteButton.textContent = '×';
+    deleteButton.onclick = () => removeItemEntry(deleteButton);
+
+    div.appendChild(proposalSelect);
+    div.appendChild(projectSelect);
+    div.appendChild(manufacturerInput);
+    div.appendChild(manufacturerPnInput);
+    div.appendChild(quantityInput);
+    div.appendChild(deleteButton);
+
     container.appendChild(div);
     itemIndex++;
 }

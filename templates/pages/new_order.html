@@ -8,6 +8,16 @@
 {% endblock %}
 
 {% block content %}
+<select id="project-template" style="display: none;">
+    {% for project in projects %}
+    <option value="{{ project }}">{{ project }}</option>
+    {% endfor %}
+</select>
+<select id="proposal-template" style="display: none;">
+    {% for proposal in proposals %}
+    <option value="{{ proposal }}">{{ proposal }}</option>
+    {% endfor %}
+</select>
 <h1 class="page-title">Create New Order</h1>
 
 <form action="/orders/new/submit" method="post" class="order-form">
