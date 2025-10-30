@@ -2,9 +2,63 @@
 
 {% block title %}User Settings{% endblock %}
 
+{% block head %} 
+<link rel="stylesheet" href="/static/css/user_settings.css">
+{% endblock %}
+
 {% block content %}
 <h1>User Settings</h1>
 
+<form action="/settings" method="get" class="user-info-form">
+    <div class="form-row">
+        <label for="id">ID:</label>
+        <input type="text" id="id" value="{{ user_info.id }}" readonly>
+    </div>
+
+    <div class="form-row">
+        <label for="username">Username:</label>
+        <input type="text" id="username" value="{{ user_info.username }}" readonly>
+    </div>
+
+    <div class="form-row">
+        <label for="email">Email:</label>
+        <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            {% if let Some(email) = user_info.email %}
+            value="{{ email }}"
+            {% else %}
+            value="Null"
+            {% endif %}
+            placeholder="Enter your email"
+        >
+    </div>
+
+    <div class="form-row">
+        <label for="active">Active:</label>
+        <input type="text" id="active" value="{{ user_info.active }}" readonly>
+    </div>
+
+    <div class="form-row">
+        <label for="role">Role:</label>
+        <input type="text" id="role" value="{{ user_info.role }}" readonly>
+    </div>
+
+    <div class="form-row">
+        <label for="belonging_area_division">Department:</label>
+        <input type="text" id="belonging_area_division" value="{{ user_info.belonging_area_division }}" readonly>
+    </div>
+
+    <div class="form-row">
+        <label for="belonging_area_sub_area">Division:</label>
+        <input type="text" id="belonging_area_sub_area" value="{{ user_info.belonging_area_sub_area }}" readonly>
+    </div>
+
+    <button type="submit" class="button submit-button">💾 Save Email</button>
+</form>
+
+<hr>
 <form action="/request-pwd-reset" method="get">
     <button type="submit">Change password</button>
 </form>

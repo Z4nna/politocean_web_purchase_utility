@@ -1,5 +1,5 @@
 use askama::Template;
-use crate::{data::order::Order,models::item::OrderItem};
+use crate::{data::order::Order,models::{item::OrderItem, user_info::UserInfo}};
 
 #[derive(Template)]
 #[template(path = "pages/new_order.html")]
@@ -66,4 +66,5 @@ pub struct ResetPasswordPageTemplate {
 #[derive(Template)]
 #[template(path = "pages/user_settings.html")]
 pub struct UserSettingsPageTemplate {
+    pub user_info: UserInfo,
 }

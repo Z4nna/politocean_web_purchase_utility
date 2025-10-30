@@ -37,3 +37,9 @@ pub async fn board_homepage_handler(
         }
     }
 }
+
+pub async fn board_manage_users(
+
+) -> Response {
+    Html("<h1> Work in progress</h1>").into_response()
+}

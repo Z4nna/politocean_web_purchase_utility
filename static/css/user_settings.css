@@ -1,0 +1,35 @@
+.form-row {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start;
+  gap: 10px;                  /* space between label and input */
+  margin-bottom: 12px;
+}
+
+.form-row label {
+  flex: 0 0 180px;            /* fixed width for labels */
+  text-align: right;          /* right-align text for a cleaner look */
+  white-space: nowrap;        /* prevents label from wrapping */
+  margin: 0;
+}
+
+.form-row input,
+.form-row select {
+  flex: 1 1 auto;             /* make inputs take remaining space */
+  padding: 6px 8px;
+  border: 1px solid var(--border-muted);
+  border-radius: 4px;
+  background-color: var(--bg-muted);
+  color: var(--text);
+  min-width: 0;               /* ensures proper shrinking on narrow screens */
+}
+
+.form-row input[readonly] {
+  background-color: var(--bg-muted);
+  color: var(--text-muted);
+}
+
+h1 {
+  padding-left: 2vw;
+}

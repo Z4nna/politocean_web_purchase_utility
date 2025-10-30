@@ -31,6 +31,7 @@ fn home_routes() -> Router<app::AppState> {
         .route("/board/home", get(board_homepage::board_homepage_handler))
         .route("/prof", get(prof_homepage::prof_homepage_handler))
         .route("/settings", get(user_settings::user_settings_handler))
+        .route("/board/users", get(board_homepage::board_manage_users))
         .route_layer(middleware::from_fn(middlewares::auth::required_authentication))
 }
 
