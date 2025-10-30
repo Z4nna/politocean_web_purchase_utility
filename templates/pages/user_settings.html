@@ -9,7 +9,7 @@
 {% block content %}
 <h1>User Settings</h1>
 
-<form action="/settings" method="get" class="user-info-form">
+<form action="/settings/set-email" method="post" class="user-info-form">
     <div class="form-row">
         <label for="id">ID:</label>
         <input type="text" id="id" value="{{ user_info.id }}" readonly>

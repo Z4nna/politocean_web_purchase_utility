@@ -30,3 +30,4 @@ lettre = { version = "0.11", default-features = false, features = ["tokio1", "to
 mime = "0.3"
 base64 = "0.21"
 rand = "0.8"
+validator = { version = "0.20", features = ["derive"] }

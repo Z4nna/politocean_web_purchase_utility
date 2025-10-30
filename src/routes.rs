@@ -12,6 +12,7 @@ pub fn get_router(app_state: app::AppState) -> Router {
     .merge(auth_routes())
     .merge(home_routes())
     .merge(orders_routes())
+    .merge(settings_routes())
     .route("/reset-password", get(password_reset::reset_password_page))
     .route("/reset-password", post(password_reset::reset_password_submit))
     .route("/request-pwd-reset", get(password_reset::request_password_reset))
@@ -30,9 +31,14 @@ fn home_routes() -> Router<app::AppState> {
         .route("/home", get(advisors_homepage::advisors_homepage_handler))
         .route("/board/home", get(board_homepage::board_homepage_handler))
         .route("/prof", get(prof_homepage::prof_homepage_handler))
-        .route("/settings", get(user_settings::user_settings_handler))
         .route("/board/users", get(board_homepage::board_manage_users))
         .route_layer(middleware::from_fn(middlewares::auth::required_authentication))
+}
+
+fn settings_routes() -> Router<app::AppState> {
+    Router::new()
+        .route("/settings", get(user_settings::user_settings_handler))
+        .route("/settings/set-email", post(user_settings::update_email))
 }
 
 fn orders_routes() -> Router<app::AppState> {
