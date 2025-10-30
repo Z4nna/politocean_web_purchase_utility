@@ -1,6 +1,6 @@
 use askama::Template;
 use crate::{
-    data::{errors, order, user}, models::{app::AppState, templates::BoardHomepageTemplate}
+    data::{self, errors::{self, AppError}, order, user}, models::{app::AppState, templates::BoardHomepageTemplate}
 };
 use axum::{
     extract::State, response::{Html, IntoResponse, Redirect, Response}
@@ -39,7 +39,18 @@ pub async fn board_homepage_handler(
 }
 
 pub async fn board_manage_users(
-
-) -> Response {
-    Html("<h1> Work in progress</h1>").into_response()
+    State(app_state): State<AppState>,
+    session: Session,
+) -> Result<Response, AppError> {
+    let user_id = session.get::<i32>("authenticated_user_id")
+    .await
+    .map_err(|e| errors::AppError::Session(e))?;
+    if let Some(id) = user_id {
+        if data::user::get_user_role(&app_state.connection_pool, id).await? == "board" {
+            // get all users except for board ones
+            // display them in a table (add possibility to remove an user and add a new one)
+            return Ok(Html("<h1>Work in progress</h1> <a href=\"/home\"></a>").into_response());
+        }
+    }
+    Ok(Redirect::to("/home").into_response())
 }

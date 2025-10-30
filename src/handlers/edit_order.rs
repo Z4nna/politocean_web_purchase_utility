@@ -173,12 +173,12 @@ pub async fn mark_order_confirmed_handler(
                     user_id: id,
                 };
                 println!("calling notify prof handler");
-                let _notify_result = handlers::prof_homepage::notify_prof_order_confirmed_handler(
+                handlers::prof_homepage::notify_prof_order_confirmed_handler(
                     State(app_state.clone()),
                     session.clone(),
                     Json(payload),
-                )
-                .await?;
+                ).await?;
+                order::mark_order_confirmed(&app_state.connection_pool, order_id).await?;
 
                 return Ok(Redirect::to("/board/home").into_response());
             }
