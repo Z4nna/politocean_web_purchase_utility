@@ -16,7 +16,7 @@ pub async fn new_order_handler(
     Extension(current_user): Extension<CurrentUser>,
 ) -> Result<Response, errors::AppError> {
 
-    let (areas, sub_areas): (Vec<String>, Vec<String>) = sqlx::query!("SELECT division, sub_area FROM areas")
+    let (areas, sub_areas): (Vec<String>, Vec<String>) = sqlx::query!("SELECT division, sub_area FROM areas WHERE archived = FALSE")
     .fetch_all(&app_state.connection_pool)
     .await
     .map_err(|e| DataError::Query(e))?
@@ -24,7 +24,7 @@ pub async fn new_order_handler(
     .map(|r| (r.division, r.sub_area))
     .unzip();
 
-    let proposals = sqlx::query!("SELECT name FROM proposals")
+    let proposals = sqlx::query!("SELECT name FROM proposals WHERE archived = FALSE")
     .fetch_all(&app_state.connection_pool)
     .await
     .map_err(|e| DataError::Query(e))?
@@ -32,7 +32,7 @@ pub async fn new_order_handler(
     .map(|r| r.name)
     .collect();
 
-    let projects = sqlx::query!("SELECT name FROM projects")
+    let projects = sqlx::query!("SELECT name FROM projects WHERE archived = FALSE")
     .fetch_all(&app_state.connection_pool)
     .await
     .map_err(|e| DataError::Query(e))?
@@ -69,7 +69,7 @@ pub async fn submit_order_handler(
     let mut indices: HashSet<i32> = HashSet::new();
     // Collect valid indices based on existing keys
     for key in user_form.keys().map(|s| s.to_string()) {
-        let maybe_index = key.strip_prefix("items_manifacturer_pn_");
+        let maybe_index = key.strip_prefix("items_manufacturer_pn_");
         match maybe_index {
             Some(index_str) => {
                 let index = index_str.parse::<i32>().unwrap();
@@ -82,8 +82,8 @@ pub async fn submit_order_handler(
     }
     // Now process only the indices that exist
     for index in indices {
-        let man_key = format!("items_manifacturer_{}", index);
-        let pn_key = format!("items_manifacturer_pn_{}", index);
+        let man_key = format!("items_manufacturer_{}", index);
+        let pn_key = format!("items_manufacturer_pn_{}", index);
         let quantity_key = format!("items_quantity_{}", index);
         let proposal_key = format!("items_proposal_{}", index);
         let project_key = format!("items_project_{}", index);

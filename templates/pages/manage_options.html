@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Options{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/palette.css" />
+<link rel="stylesheet" href="/static/css/advisors_homepage.css" />
+<link rel="stylesheet" href="/static/css/manage_users.css" />
+<link rel="stylesheet" href="/static/css/manage_options.css" />
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="page-title">Manage Areas, Projects &amp; Proposals</h1>
+    <p>Click a section title to expand it.</p>
+
+    <!-- ================= AREAS ================= -->
+    <details class="option-section">
+        <summary>Areas &amp; sub-areas</summary>
+        <div class="option-section-body">
+            <p>
+                Renaming an area propagates to every order and member automatically.
+                Deleting is blocked while any member still belongs to it; once no
+                members reference it, it is removed (or archived if old orders still use it).
+            </p>
+            <div class="table-wrapper">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Area (division)</th>
+                            <th>Sub area</th>
+                            <th>Status</th>
+                            <th>Rename</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for area in areas %}
+                        <tr>
+                            <td>
+                                <input type="text" name="new_division" value="{{ area.division }}"
+                                       form="rename-area-{{ loop.index }}" required>
+                            </td>
+                            <td>
+                                <input type="text" name="new_sub_area" value="{{ area.sub_area }}"
+                                       form="rename-area-{{ loop.index }}" required>
+                            </td>
+                            <td>{% if area.archived %}<span title="Archived">🗄️ archived</span>{% else %}Active{% endif %}</td>
+                            <td class="actions-cell">
+                                <form id="rename-area-{{ loop.index }}" action="/board/options/areas/rename" method="post" class="inline-form">
+                                    <input type="hidden" name="old_division" value="{{ area.division }}">
+                                    <input type="hidden" name="old_sub_area" value="{{ area.sub_area }}">
+                                    <button type="submit" class="button">Save rename</button>
+                                </form>
+                            </td>
+                            <td class="actions-cell">
+                                {% if area.archived %}
+                                <form action="/board/options/areas/unarchive" method="post" class="inline-form">
+                                    <input type="hidden" name="division" value="{{ area.division }}">
+                                    <input type="hidden" name="sub_area" value="{{ area.sub_area }}">
+                                    <button type="submit" class="button">Restore</button>
+                                </form>
+                                {% else %}
+                                <form action="/board/options/areas/delete" method="post" class="inline-form"
+                                      onsubmit="return confirm('Delete area {{ area.division }} / {{ area.sub_area }}?');">
+                                    <input type="hidden" name="division" value="{{ area.division }}">
+                                    <input type="hidden" name="sub_area" value="{{ area.sub_area }}">
+                                    <button type="submit" class="button delete-button">Delete</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Add area</h3>
+            <form action="/board/options/areas/create" method="post" class="user-info-form">
+                <div class="form-row">
+                    <label for="area_division">Area (division):</label>
+                    <input type="text" id="area_division" name="division" required>
+                </div>
+                <div class="form-row">
+                    <label for="area_sub_area">Sub area:</label>
+                    <input type="text" id="area_sub_area" name="sub_area" required>
+                </div>
+                <button type="submit" class="button submit-button">➕ Add area</button>
+            </form>
+        </div>
+    </details>
+
+    <!-- ================= PROJECTS ================= -->
+    <details class="option-section">
+        <summary>Projects</summary>
+        <div class="option-section-body">
+            <p>
+                "Delete" only archives a project so past orders keep their history.
+                When renaming, choose whether to update old orders (rename in place)
+                or keep them on the old name (archive old + create new).
+            </p>
+            <div class="table-wrapper">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Status</th>
+                            <th>Rename mode</th>
+                            <th>Rename</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in projects %}
+                        <tr>
+                            <td>
+                                <input type="text" name="new_name" value="{{ project.name }}"
+                                       form="rename-project-{{ loop.index }}" required>
+                            </td>
+                            <td>{% if project.archived %}<span title="Archived">🗄️ archived</span>{% else %}Active{% endif %}</td>
+                            <td>
+                                <select name="mode" form="rename-project-{{ loop.index }}">
+                                    <option value="archive" selected>Archive old + create new</option>
+                                    <option value="cascade">Rename in place (updates old orders)</option>
+                                </select>
+                            </td>
+                            <td class="actions-cell">
+                                <form id="rename-project-{{ loop.index }}" action="/board/options/projects/rename" method="post" class="inline-form">
+                                    <input type="hidden" name="old_name" value="{{ project.name }}">
+                                    <button type="submit" class="button">Save rename</button>
+                                </form>
+                            </td>
+                            <td class="actions-cell">
+                                {% if project.archived %}
+                                <form action="/board/options/projects/unarchive" method="post" class="inline-form">
+                                    <input type="hidden" name="name" value="{{ project.name }}">
+                                    <button type="submit" class="button">Restore</button>
+                                </form>
+                                {% else %}
+                                <form action="/board/options/projects/delete" method="post" class="inline-form"
+                                      onsubmit="return confirm('Archive project {{ project.name }}?');">
+                                    <input type="hidden" name="name" value="{{ project.name }}">
+                                    <button type="submit" class="button delete-button">Delete (archive)</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Add project</h3>
+            <form action="/board/options/projects/create" method="post" class="user-info-form">
+                <div class="form-row">
+                    <label for="project_name">Name:</label>
+                    <input type="text" id="project_name" name="name" required>
+                </div>
+                <button type="submit" class="button submit-button">➕ Add project</button>
+            </form>
+        </div>
+    </details>
+
+    <!-- ================= PROPOSALS ================= -->
+    <details class="option-section">
+        <summary>Proposals</summary>
+        <div class="option-section-body">
+            <p>
+                "Delete" only archives a proposal so past orders keep their history.
+                When renaming, choose whether to update old orders (rename in place)
+                or keep them on the old name (archive old + create new).
+            </p>
+            <div class="table-wrapper">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Status</th>
+                            <th>Rename mode</th>
+                            <th>Rename</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for proposal in proposals %}
+                        <tr>
+                            <td>
+                                <input type="text" name="new_name" value="{{ proposal.name }}"
+                                       form="rename-proposal-{{ loop.index }}" required>
+                            </td>
+                            <td>{% if proposal.archived %}<span title="Archived">🗄️ archived</span>{% else %}Active{% endif %}</td>
+                            <td>
+                                <select name="mode" form="rename-proposal-{{ loop.index }}">
+                                    <option value="archive" selected>Archive old + create new</option>
+                                    <option value="cascade">Rename in place (updates old orders)</option>
+                                </select>
+                            </td>
+                            <td class="actions-cell">
+                                <form id="rename-proposal-{{ loop.index }}" action="/board/options/proposals/rename" method="post" class="inline-form">
+                                    <input type="hidden" name="old_name" value="{{ proposal.name }}">
+                                    <button type="submit" class="button">Save rename</button>
+                                </form>
+                            </td>
+                            <td class="actions-cell">
+                                {% if proposal.archived %}
+                                <form action="/board/options/proposals/unarchive" method="post" class="inline-form">
+                                    <input type="hidden" name="name" value="{{ proposal.name }}">
+                                    <button type="submit" class="button">Restore</button>
+                                </form>
+                                {% else %}
+                                <form action="/board/options/proposals/delete" method="post" class="inline-form"
+                                      onsubmit="return confirm('Archive proposal {{ proposal.name }}?');">
+                                    <input type="hidden" name="name" value="{{ proposal.name }}">
+                                    <button type="submit" class="button delete-button">Delete (archive)</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Add proposal</h3>
+            <form action="/board/options/proposals/create" method="post" class="user-info-form">
+                <div class="form-row">
+                    <label for="proposal_name">Name:</label>
+                    <input type="text" id="proposal_name" name="name" required>
+                </div>
+                <button type="submit" class="button submit-button">➕ Add proposal</button>
+            </form>
+        </div>
+    </details>
+</div>
+{% endblock %}

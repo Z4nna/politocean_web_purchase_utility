@@ -1,5 +1,6 @@
 pub mod user;
 pub mod errors;
+pub mod options;
 pub mod order;
 pub mod item;
 pub mod excel;

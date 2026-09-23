@@ -1,0 +1,92 @@
+/* Manage options page — collapsible sections + in-table input styling.
+   Builds on advisors_homepage.css (tables, buttons) and manage_users.css
+   (compact selects, delete button). */
+
+/* --- Collapsible sections (native <details>/<summary>) --- */
+details.option-section {
+    margin-bottom: 1.5rem;
+}
+
+details.option-section > summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.9rem 1.1rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--bg);
+    border: 3px solid var(--border-muted);
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+/* Hide the default disclosure triangle; use our own rotating caret. */
+details.option-section > summary::-webkit-details-marker {
+    display: none;
+}
+
+details.option-section > summary::before {
+    content: "\25B8"; /* ▸ */
+    font-size: 0.9rem;
+    color: var(--primary);
+    transition: transform 0.2s ease;
+}
+
+details.option-section[open] > summary {
+    border-radius: 12px 12px 0 0;
+}
+
+details.option-section[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+details.option-section > summary:hover {
+    background: var(--highlight);
+}
+
+/* Body panel continues the header frame so the section reads as one card. */
+.option-section-body {
+    padding: 1.25rem;
+    border: 3px solid var(--border-muted);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    background: var(--bg);
+}
+
+.option-section-body > *:last-child {
+    margin-bottom: 0;
+}
+
+/* The section frame already provides the border/radius, so the table sits flush
+   inside it (avoids a double border) while keeping every other table on the
+   site untouched. */
+.option-section-body .orders-table {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+/* Compact, themed in-table text inputs — mirrors the .orders-table select rule
+   in manage_users.css so rename fields line up with the rest of the row. */
+.orders-table input[type="text"] {
+    width: 100%;
+    min-width: 120px;
+    margin-top: 0;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: var(--bg-dark);
+    color: var(--text);
+    box-sizing: border-box;
+}
+
+.orders-table input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary);
+}

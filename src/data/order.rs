@@ -178,28 +178,6 @@ pub async fn create_order(
     Ok(order_id)
 }
 
-pub async fn create_order_with_id(
-    pool: &PgPool,
-    order_id: i32,
-    author_id: i32,
-    description: String,
-    area_division: String,
-    area_sub_area: String,
-) -> Result<(), DataError> {
-    sqlx::query!(
-        "INSERT INTO orders (id, author_id, description, area_division, area_sub_area) VALUES ($1, $2, $3, $4, $5)",
-        order_id,
-        author_id,
-        description,
-        area_division,
-        area_sub_area
-    )
-    .execute(pool)
-    .await
-    .map_err(|e| DataError::Query(e))?;
-    Ok(())
-}
-
 pub async fn delete_order(pool: &PgPool, order_id: i32) -> Result<(), DataError> {
     sqlx::query!(
         r#"DELETE FROM orders WHERE id = $1"#,
@@ -208,6 +186,71 @@ pub async fn delete_order(pool: &PgPool, order_id: i32) -> Result<(), DataError>
     .execute(pool)
     .await
     .map_err(|e| DataError::Query(e))?;
+    Ok(())
+}
+
+/// A single item as submitted from the order form (before it is persisted).
+pub struct NewOrderItem {
+    pub manufacturer: String,
+    pub manufacturer_pn: String,
+    pub quantity: i32,
+    pub proposal: String,
+    pub project: String,
+}
+
+/// Applies an edit to an existing order atomically: updates the order fields and
+/// fully replaces its items, all in one transaction. If anything fails (e.g. an
+/// invalid area/project/proposal foreign key) the whole change is rolled back, so
+/// the order is never left deleted or half-updated.
+///
+/// Replacing the items (delete + re-insert) rather than relying on the old
+/// delete-and-recreate path guarantees that changed project/proposal values are
+/// persisted, instead of being silently kept by the `ON CONFLICT` upsert.
+pub async fn update_order_and_items(
+    pool: &PgPool,
+    order_id: i32,
+    description: String,
+    area_division: String,
+    area_sub_area: String,
+    items: Vec<NewOrderItem>,
+) -> Result<(), DataError> {
+    let mut tx = pool.begin().await.map_err(DataError::Query)?;
+
+    sqlx::query!(
+        "UPDATE orders SET description = $1, area_division = $2, area_sub_area = $3 WHERE id = $4",
+        description,
+        area_division,
+        area_sub_area,
+        order_id
+    )
+    .execute(&mut *tx)
+    .await
+    .map_err(DataError::Query)?;
+
+    sqlx::query!("DELETE FROM order_items WHERE order_id = $1", order_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(DataError::Query)?;
+
+    for item in items {
+        sqlx::query!(
+            "INSERT INTO order_items (order_id, manufacturer, manufacturer_pn, quantity, proposal, project)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             ON CONFLICT (order_id, manufacturer, manufacturer_pn)
+             DO UPDATE SET quantity = order_items.quantity + EXCLUDED.quantity",
+            order_id,
+            item.manufacturer,
+            item.manufacturer_pn,
+            item.quantity,
+            item.proposal,
+            item.project
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(DataError::Query)?;
+    }
+
+    tx.commit().await.map_err(DataError::Query)?;
     Ok(())
 }
 

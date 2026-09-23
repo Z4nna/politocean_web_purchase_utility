@@ -10,12 +10,19 @@
 {% block content %}
 <select id="project-template" style="display: none;">
     {% for project in projects %}
-    <option value="{{ project }}">{{ project }}</option>
+    <option value="{{ project.name }}" data-archived="{{ project.archived }}">{{ project.name }}{% if project.archived %} (archived){% endif %}</option>
     {% endfor %}
 </select>
 <select id="proposal-template" style="display: none;">
     {% for proposal in proposals %}
-    <option value="{{ proposal }}">{{ proposal }}</option>
+    <option value="{{ proposal.name }}" data-archived="{{ proposal.archived }}">{{ proposal.name }}{% if proposal.archived %} (archived){% endif %}</option>
+    {% endfor %}
+</select>
+<!-- Valid (division, sub_area) pairs; read from the DOM by restrictSubAreas().
+     HTML attribute decoding keeps names like "R&D" intact. -->
+<select id="area-pairs-data" style="display: none;">
+    {% for pair in area_pairs %}
+    <option value="{{ pair.sub_area }}" data-division="{{ pair.division }}" data-archived="{{ pair.archived }}"></option>
     {% endfor %}
 </select>
 
@@ -58,9 +65,9 @@
 
             <div class="form-row">
                 <label for="area_division">Department:</label>
-                <select name="area_division" id="area_division" required>
-                    {% for area in areas %}
-                    <option value="{{ area }}" {% if area == order.area_division.as_str() %}selected{% endif %}>{{ area }}</option>
+                <select name="area_division" id="area_division" required onchange="restrictSubAreas()">
+                    {% for division in divisions %}
+                    <option value="{{ division }}" {% if division == order.area_division.as_str() %}selected{% endif %}>{{ division }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -126,7 +133,7 @@
                 <label for="proposal">Proposal:</label>
                 <select name="proposal" id="proposal" required>
                     {% for proposal in proposals %}
-                    <option value="{{ proposal }}">{{ proposal }}</option>
+                    <option value="{{ proposal.name }}" {% if proposal.archived %}disabled{% endif %}>{{ proposal.name }}{% if proposal.archived %} (archived){% endif %}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -135,7 +142,7 @@
                 <label for="project">Project:</label>
                 <select name="project" id="project" required>
                     {% for project in projects %}
-                    <option value="{{ project }}">{{ project }}</option>
+                    <option value="{{ project.name }}" {% if project.archived %}disabled{% endif %}>{{ project.name }}{% if project.archived %} (archived){% endif %}</option>
                     {% endfor %}
                 </select>
             </div>

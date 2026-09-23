@@ -2,7 +2,7 @@ use askama::Template;
 use umya_spreadsheet::{Spreadsheet};
 use crate::{
     handlers,
-    data::{errors::{self, DataError}, excel, item, order, user}, models::{app::{AppState, CurrentUser}, templates::{CoffeePageTemplate, EditOrderTemplate}}
+    data::{errors::{self, DataError}, excel, item, options, order, user}, models::{app::{AppState, CurrentUser}, templates::{CoffeePageTemplate, EditOrderTemplate}}
 };
 use axum::{
     body::{Body, Bytes}, extract::{Multipart, Path, State}, http::{header, HeaderValue, StatusCode}, response::{Html, IntoResponse, Redirect, Response}, Extension, Form, Json
@@ -18,35 +18,86 @@ pub async fn edit_order_handler(
     Extension(current_user): Extension<CurrentUser>,
     Path(order_id): Path<i32>,
 ) -> Result<Response, errors::AppError> {
-    let (areas, sub_areas): (Vec<String>, Vec<String>) = sqlx::query!("SELECT division, sub_area FROM areas")
-    .fetch_all(&app_state.connection_pool)
-    .await
-    .map_err(|e| DataError::Query(e))?
-    .into_iter()
-    .map(|r| (r.division, r.sub_area))
-    .unzip();
+    // Fetch the order and its items first so we can keep their currently selected
+    // area/proposal/project available in the dropdowns even if those options have
+    // since been archived (archived options are shown but rendered disabled, so
+    // they are not selectable for new items).
+    let order = order::get_order_from_id(order_id, &app_state.connection_pool).await?;
+    let items = item::get_items_from_order(order_id, &app_state.connection_pool).await?;
 
-    let proposals = sqlx::query!("SELECT name FROM proposals")
+    // Every valid, non-archived (division, sub_area) pair, plus the order's own
+    // pair kept available even if it has since been archived. The client uses
+    // `area_pairs` to constrain the sub-area dropdown to combinations that
+    // actually exist, so an edit can never produce an invalid composite key.
+    let mut area_pairs: Vec<options::AreaRow> = sqlx::query_as!(
+        options::AreaRow,
+        "SELECT division, sub_area, archived FROM areas WHERE archived = FALSE ORDER BY division, sub_area"
+    )
     .fetch_all(&app_state.connection_pool)
     .await
-    .map_err(|e| DataError::Query(e))?
-    .into_iter()
-    .map(|r| r.name)
-    .collect();
+    .map_err(|e| DataError::Query(e))?;
 
-    let projects = sqlx::query!("SELECT name FROM projects")
+    if !area_pairs.iter().any(|p| p.division == order.area_division && p.sub_area == order.area_sub_area) {
+        let archived = sqlx::query!(
+            "SELECT archived FROM areas WHERE division = $1 AND sub_area = $2",
+            order.area_division,
+            order.area_sub_area
+        )
+        .fetch_optional(&app_state.connection_pool)
+        .await
+        .map_err(|e| DataError::Query(e))?
+        .map(|r| r.archived)
+        .unwrap_or(true);
+        area_pairs.push(options::AreaRow {
+            division: order.area_division.clone(),
+            sub_area: order.area_sub_area.clone(),
+            archived,
+        });
+    }
+
+    // Distinct dropdown option lists derived from the available pairs.
+    let mut divisions: Vec<String> = area_pairs.iter().map(|p| p.division.clone()).collect();
+    divisions.sort();
+    divisions.dedup();
+    let mut sub_areas: Vec<String> = area_pairs.iter().map(|p| p.sub_area.clone()).collect();
+    sub_areas.sort();
+    sub_areas.dedup();
+
+    // Active options first (alphabetical, selectable), then any archived option a
+    // current item still references, appended and flagged so the template disables it.
+    let mut proposals: Vec<options::OptionRow> = sqlx::query_as!(
+        options::OptionRow,
+        "SELECT name, archived FROM proposals WHERE archived = FALSE ORDER BY name"
+    )
     .fetch_all(&app_state.connection_pool)
     .await
-    .map_err(|e| DataError::Query(e))?
-    .into_iter()
-    .map(|r| r.name)
-    .collect();
+    .map_err(|e| DataError::Query(e))?;
+
+    let mut projects: Vec<options::OptionRow> = sqlx::query_as!(
+        options::OptionRow,
+        "SELECT name, archived FROM projects WHERE archived = FALSE ORDER BY name"
+    )
+    .fetch_all(&app_state.connection_pool)
+    .await
+    .map_err(|e| DataError::Query(e))?;
+
+    let mut seen_proposals: HashSet<String> = proposals.iter().map(|o| o.name.clone()).collect();
+    let mut seen_projects: HashSet<String> = projects.iter().map(|o| o.name.clone()).collect();
+    for item in &items {
+        if seen_proposals.insert(item.proposal.clone()) {
+            proposals.push(options::OptionRow { name: item.proposal.clone(), archived: true });
+        }
+        if seen_projects.insert(item.project.clone()) {
+            projects.push(options::OptionRow { name: item.project.clone(), archived: true });
+        }
+    }
 
     let html_string = EditOrderTemplate{
-        order: order::get_order_from_id(order_id, &app_state.connection_pool).await?,
-        items: item::get_items_from_order(order_id, &app_state.connection_pool).await?,
-        areas: HashSet::<String>::from_iter(areas).into_iter().collect(),
-        sub_areas: HashSet::<String>::from_iter(sub_areas).into_iter().collect(),
+        order: order,
+        items: items,
+        divisions: divisions,
+        sub_areas: sub_areas,
+        area_pairs: area_pairs,
         proposals: proposals,
         projects: projects,
         is_board: current_user.can_access_board(),
@@ -54,92 +105,59 @@ pub async fn edit_order_handler(
     Ok(Html(html_string).into_response())
 }
 
-pub async fn new_order_with_id_handler(
-    State(app_state): State<AppState>,
-    session: Session,
-    Form(user_form): Form<HashMap<String, String>>,
-    order_id: i32,
-) -> Result<Response, errors::AppError> {
-    let order_author_id = session
-    .get::<i32>("authenticated_user_id")
-    .await
-    .map_err(|e| errors::AppError::Session(e))?.unwrap();
-    let description = user_form.get("description").unwrap().trim().to_string();
-    let area_division = user_form.get("area_division").unwrap().trim().to_string();
-    let area_sub_area = user_form.get("area_sub_area").unwrap().trim().to_string();
-    order::create_order_with_id(
-        &app_state.connection_pool, 
-        order_id, 
-        order_author_id, 
-        description, 
-        area_division, 
-        area_sub_area).await?;
-
+/// Extracts the submitted item rows from the order form. Rows are identified by
+/// the `items_manufacturer_pn_<index>` keys produced by the client-side JS.
+fn parse_order_items(form: &HashMap<String, String>) -> Vec<order::NewOrderItem> {
     let mut indices: HashSet<i32> = HashSet::new();
-    // Collect valid indices based on existing keys
-    for key in user_form.keys().map(|s| s.to_string()) {
-        let maybe_index = key.strip_prefix("items_manifacturer_pn_");
-        match maybe_index {
-            Some(index_str) => {
-                let index = index_str.parse::<i32>().unwrap();
+    for key in form.keys() {
+        if let Some(index_str) = key.strip_prefix("items_manufacturer_pn_") {
+            if let Ok(index) = index_str.parse::<i32>() {
                 indices.insert(index);
-            }
-            None => {
-                continue;
             }
         }
     }
-    // Now process only the indices that exist
-    for index in indices {
-        let man_key = format!("items_manifacturer_{}", index);
-        let pn_key = format!("items_manifacturer_pn_{}", index);
-        let quantity_key = format!("items_quantity_{}", index);
-        let proposal_key = format!("items_proposal_{}", index);
-        let project_key = format!("items_project_{}", index);
 
-        let manifacturer = user_form.get(&man_key).unwrap_or(&"".to_string()).trim().to_string();
-        let manifacturer_pn = user_form.get(&pn_key).unwrap_or(&"".to_string()).trim().to_string();
-        let proposal = user_form.get(&proposal_key).unwrap_or(&"Elettronica generale".to_string()).trim().to_string();
-        let project = user_form.get(&project_key).unwrap_or(&"Varie per lab".to_string()).trim().to_string();
-        let quantity = user_form
-            .get(&quantity_key)
-            .unwrap()
-            .to_string()
-            .parse::<i32>()
-            .unwrap_or(1);
-        order::add_item_to_order(
-            &app_state.connection_pool,
-            order_id,
-            manifacturer,
-            manifacturer_pn,
-            quantity,
-            proposal,
-            project,
-            None,
-            None,
-        )
-        .await?;
-    }
-
-    Ok(Redirect::to("/home").into_response())
+    indices
+        .into_iter()
+        .map(|index| {
+            let get = |prefix: &str| form.get(&format!("{}{}", prefix, index)).map(|s| s.trim().to_string());
+            order::NewOrderItem {
+                manufacturer: get("items_manufacturer_").unwrap_or_default(),
+                manufacturer_pn: get("items_manufacturer_pn_").unwrap_or_default(),
+                proposal: get("items_proposal_").unwrap_or_else(|| "Elettronica generale".to_string()),
+                project: get("items_project_").unwrap_or_else(|| "Varie per lab".to_string()),
+                quantity: get("items_quantity_")
+                    .and_then(|q| q.parse::<i32>().ok())
+                    .unwrap_or(1),
+            }
+        })
+        .collect()
 }
 
 pub async fn submit_order_handler(
     State(app_state): State<AppState>,
-    session: Session,
+    _session: Session,
     Path(order_id): Path<i32>,
     Form(form): Form<HashMap<String, String>>,
-) -> Result<Response, errors::AppError>{
-    // delete old order
-    order::delete_order(&app_state.connection_pool, order_id).await?;
-    // forward request to new order
-    let response = new_order_with_id_handler(State(app_state), session, Form(form), order_id).await;
-    match response {
-        Ok(_) => {
-            Ok(Redirect::to(&format!("/orders/{}/edit", order_id)).into_response())
-        },
-        Err(e) => Err(e)
-    }
+) -> Result<Response, errors::AppError> {
+    let description = form.get("description").map(|s| s.trim().to_string()).unwrap_or_default();
+    let area_division = form.get("area_division").map(|s| s.trim().to_string()).unwrap_or_default();
+    let area_sub_area = form.get("area_sub_area").map(|s| s.trim().to_string()).unwrap_or_default();
+    let items = parse_order_items(&form);
+
+    // Applied atomically: on any failure (e.g. an invalid area/project/proposal)
+    // the whole edit rolls back, so the order is never lost or half-updated.
+    order::update_order_and_items(
+        &app_state.connection_pool,
+        order_id,
+        description,
+        area_division,
+        area_sub_area,
+        items,
+    )
+    .await?;
+
+    Ok(Redirect::to(&format!("/orders/{}/edit", order_id)).into_response())
 }
 
 pub async fn mark_order_ready_handler(State(app_state): State<AppState>, _session: Session, Path(order_id): Path<i32>) -> Result<Response, errors::AppError>{

@@ -1,5 +1,5 @@
 use askama::Template;
-use crate::{data::order::Order,models::{item::OrderItem, user_info::UserInfo}};
+use crate::{data::{options::{AreaRow, OptionRow}, order::Order}, models::{item::OrderItem, user_info::UserInfo}};
 
 #[derive(Template)]
 #[template(path = "pages/new_order.html")]
@@ -29,10 +29,17 @@ pub struct AdvisorHomepageTemplate {
 pub struct EditOrderTemplate {
     pub order: Order,
     pub items: Vec<OrderItem>,
-    pub areas: Vec<String>,
+    // Division and sub-area are two dropdowns but form a composite key in `areas`.
+    // `area_pairs` lists every valid (division, sub_area) pair so the client can
+    // keep the sub-area dropdown constrained to valid, non-archived combinations.
+    pub divisions: Vec<String>,
     pub sub_areas: Vec<String>,
-    pub proposals: Vec<String>,
-    pub projects: Vec<String>,
+    pub area_pairs: Vec<AreaRow>,
+    // Proposals/projects carry an `archived` flag so archived options can be
+    // rendered disabled: still shown for items that already reference them, but
+    // not selectable for new items.
+    pub proposals: Vec<OptionRow>,
+    pub projects: Vec<OptionRow>,
     pub is_board: bool,
 }
 
@@ -88,5 +95,14 @@ pub struct ManageUsersTemplate {
     pub divisions: Vec<String>,
     pub sub_areas: Vec<String>,
     pub roles: Vec<String>,
+    pub is_board: bool,
+}
+
+#[derive(Template)]
+#[template(path = "pages/manage_options.html")]
+pub struct ManageOptionsTemplate {
+    pub areas: Vec<AreaRow>,
+    pub projects: Vec<OptionRow>,
+    pub proposals: Vec<OptionRow>,
     pub is_board: bool,
 }

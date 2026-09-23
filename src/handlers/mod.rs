@@ -8,3 +8,4 @@ pub mod order_operations;
 pub mod password_reset;
 pub mod user_settings;
 pub mod manage_users;
+pub mod manage_options;

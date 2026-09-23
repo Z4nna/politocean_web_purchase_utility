@@ -1,5 +1,5 @@
 use axum::{middleware::{self, from_fn_with_state}, routing::{get, post}, Router};
-use crate::handlers::{advisors_homepage, auth, board_homepage, edit_order, manage_users, new_order, order_operations, password_reset, prof_homepage, user_settings};
+use crate::handlers::{advisors_homepage, auth, board_homepage, edit_order, manage_options, manage_users, new_order, order_operations, password_reset, prof_homepage, user_settings};
 use crate::middlewares::auth::RoleGuard;
 use crate::models::app;
 use tower_http::services::ServeDir;
@@ -41,6 +41,7 @@ fn home_routes() -> Router<app::AppState> {
         .merge(advisor_home_routes())
         .merge(board_home_routes())
         .merge(manage_users_routes())
+        .merge(manage_options_routes())
         .merge(prof_home_routes())
 }
 
@@ -80,6 +81,30 @@ fn manage_users_routes() -> Router<app::AppState> {
         .route("/board/users/create", post(manage_users::create_user_handler))
         .route("/board/users/:id/update", post(manage_users::update_user_handler))
         .route("/board/users/:id/delete", post(manage_users::delete_user_handler))
+        .route_layer(from_fn_with_state(
+            require_role(&["board", "prof"]),
+            middlewares::auth::require_role,
+        ))
+}
+
+fn manage_options_routes() -> Router<app::AppState> {
+    Router::new()
+        .route("/board/options", get(manage_options::manage_options_page))
+        // Areas / sub-areas
+        .route("/board/options/areas/create", post(manage_options::create_area_handler))
+        .route("/board/options/areas/rename", post(manage_options::rename_area_handler))
+        .route("/board/options/areas/delete", post(manage_options::delete_area_handler))
+        .route("/board/options/areas/unarchive", post(manage_options::unarchive_area_handler))
+        // Projects
+        .route("/board/options/projects/create", post(manage_options::create_project_handler))
+        .route("/board/options/projects/rename", post(manage_options::rename_project_handler))
+        .route("/board/options/projects/delete", post(manage_options::delete_project_handler))
+        .route("/board/options/projects/unarchive", post(manage_options::unarchive_project_handler))
+        // Proposals
+        .route("/board/options/proposals/create", post(manage_options::create_proposal_handler))
+        .route("/board/options/proposals/rename", post(manage_options::rename_proposal_handler))
+        .route("/board/options/proposals/delete", post(manage_options::delete_proposal_handler))
+        .route("/board/options/proposals/unarchive", post(manage_options::unarchive_proposal_handler))
         .route_layer(from_fn_with_state(
             require_role(&["board", "prof"]),
             middlewares::auth::require_role,

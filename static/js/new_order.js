@@ -8,15 +8,17 @@ function addItemEntry(proposal = "", project = "", manufacturer = "", manufactur
 
     const proposalSelect = document.createElement('select');
     proposalSelect.name = `items_proposal_${itemIndex}`;
-    proposalSelect.value = proposal;
     proposalSelect.required = true;
     proposalSelect.innerHTML = document.getElementById('proposal-template').innerHTML;
+    // Select the item's value only after the options exist. Setting it before
+    // (or for an empty new row) would leave the select on a random first option.
+    if (proposal) proposalSelect.value = proposal;
 
     const projectSelect = document.createElement('select');
     projectSelect.name = `items_project_${itemIndex}`;
-    projectSelect.value = project;
     projectSelect.required = true;
     projectSelect.innerHTML = document.getElementById('project-template').innerHTML;
+    if (project) projectSelect.value = project;
 
     const manufacturerInput = document.createElement('input');
     manufacturerInput.type = 'text';

@@ -50,7 +50,7 @@ pub async fn get_users_except(pool: &PgPool, exclude_id: i32) -> Result<Vec<User
 
 /// Distinct area divisions defined in the database.
 pub async fn get_divisions(pool: &PgPool) -> Result<Vec<String>, DataError> {
-    let rows = sqlx::query!("SELECT DISTINCT division FROM areas ORDER BY division")
+    let rows = sqlx::query!("SELECT DISTINCT division FROM areas WHERE archived = FALSE ORDER BY division")
         .fetch_all(pool)
         .await
         .map_err(DataError::Query)?;
@@ -59,7 +59,7 @@ pub async fn get_divisions(pool: &PgPool) -> Result<Vec<String>, DataError> {
 
 /// Distinct area sub-areas defined in the database.
 pub async fn get_sub_areas(pool: &PgPool) -> Result<Vec<String>, DataError> {
-    let rows = sqlx::query!("SELECT DISTINCT sub_area FROM areas ORDER BY sub_area")
+    let rows = sqlx::query!("SELECT DISTINCT sub_area FROM areas WHERE archived = FALSE ORDER BY sub_area")
         .fetch_all(pool)
         .await
         .map_err(DataError::Query)?;
