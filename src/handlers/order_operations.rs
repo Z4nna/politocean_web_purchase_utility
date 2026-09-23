@@ -6,16 +6,17 @@ use crate::{
     data::{errors, order},
 };
 use axum::{
-    extract::State, response::{Html, IntoResponse, Response}, Json
+    extract::State, response::{Html, IntoResponse, Response}, Extension, Json
 };
 use tower_sessions::{Session};
+use crate::models::app::CurrentUser;
 
 pub async fn order_op_page_handler(
     State(_app_state): State<AppState>,
+    Extension(current_user): Extension<CurrentUser>,
 ) -> Result<Response, errors::AppError>{
-    
     let html_string = OrderArithmeticPageTemplate {
-        
+        is_board: current_user.can_access_board(),
     }.render().unwrap();
     Ok(Html(html_string).into_response())
 }

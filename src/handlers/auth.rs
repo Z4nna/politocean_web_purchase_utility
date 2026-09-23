@@ -14,6 +14,12 @@ pub async fn login() -> impl IntoResponse {
     Html(html_string).into_response()
 }
 
+pub async fn logout_handler(session: Session) -> Result<Response, errors::AppError> {
+    // Invalidate the session entirely (clears data and deletes it from the store).
+    session.flush().await.map_err(errors::AppError::Session)?;
+    Ok(Redirect::to("/").into_response())
+}
+
 pub async fn login_handler(
     State(app_state): State<AppState>,
     session: Session,

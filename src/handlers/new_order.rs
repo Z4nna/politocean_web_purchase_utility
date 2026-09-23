@@ -6,15 +6,16 @@ use crate::{
     data::{errors, order},
 };
 use axum::{
-    body::Bytes, extract::{Form, Multipart, State}, response::{Html, IntoResponse, Redirect, Response}
+    body::Bytes, extract::{Form, Multipart, State}, response::{Html, IntoResponse, Redirect, Response}, Extension
 };
 use tower_sessions::Session;
+use crate::models::app::CurrentUser;
 
 pub async fn new_order_handler(
     State(app_state): State<AppState>,
-    _session: Session,
+    Extension(current_user): Extension<CurrentUser>,
 ) -> Result<Response, errors::AppError> {
-    
+
     let (areas, sub_areas): (Vec<String>, Vec<String>) = sqlx::query!("SELECT division, sub_area FROM areas")
     .fetch_all(&app_state.connection_pool)
     .await
@@ -45,6 +46,7 @@ pub async fn new_order_handler(
         sub_areas: HashSet::<String>::from_iter(sub_areas).into_iter().collect(),
         proposals: proposals,
         projects: projects,
+        is_board: current_user.can_access_board(),
     }.render().unwrap();
 
     Ok(Html(html_string).into_response())

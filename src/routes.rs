@@ -2,84 +2,95 @@ use axum::{middleware::{self, from_fn_with_state}, routing::{get, post}, Router}
 use crate::handlers::{advisors_homepage, auth, board_homepage, edit_order, manage_users, new_order, order_operations, password_reset, prof_homepage, user_settings};
 use crate::middlewares::auth::RoleGuard;
 use crate::models::app;
-use sqlx::PgPool;
 use tower_http::services::ServeDir;
 use crate::middlewares;
 
 pub fn get_router(app_state: app::AppState) -> Router {
     let server_dir = ServeDir::new("static");
-    let pool = app_state.connection_pool.clone();
 
     Router::new()
     .route("/", get(auth::login))
     .merge(auth_routes())
-    .merge(home_routes(&pool))
+    .merge(home_routes())
     .merge(orders_routes())
     .merge(settings_routes())
     .route("/reset-password", get(password_reset::reset_password_page))
     .route("/reset-password", post(password_reset::reset_password_submit))
     .route("/request-pwd-reset", get(password_reset::request_password_reset))
     .nest_service("/static", server_dir)
-    .layer(middleware::from_fn(middlewares::auth::authenticate))
+    .layer(from_fn_with_state(app_state.clone(), middlewares::auth::authenticate))
     .with_state(app_state)
 }
 
 fn auth_routes() -> Router<app::AppState> {
     Router::new()
         .route("/log-in", post(auth::login_handler))
+        .route("/logout", post(auth::logout_handler))
 }
 
-/// Builds a role-gating layer for the given roles, backed by the DB `pool`.
-fn require_role(pool: &PgPool, roles: &[&str]) -> RoleGuard {
+/// Builds a role-gating layer for the given roles. The caller's role is resolved
+/// by the `authenticate` middleware and read from `CurrentUser`.
+fn require_role(roles: &[&str]) -> RoleGuard {
     RoleGuard {
-        pool: pool.clone(),
         allowed_roles: roles.iter().map(|r| r.to_string()).collect(),
     }
 }
 
-fn home_routes(pool: &PgPool) -> Router<app::AppState> {
+fn home_routes() -> Router<app::AppState> {
     Router::new()
-        .merge(advisor_home_routes(pool))
-        .merge(board_home_routes(pool))
-        .merge(manage_users_routes(pool))
-        .merge(prof_home_routes(pool))
+        .merge(advisor_home_routes())
+        .merge(board_home_routes())
+        .merge(manage_users_routes())
+        .merge(prof_home_routes())
 }
 
-fn advisor_home_routes(pool: &PgPool) -> Router<app::AppState> {
+fn advisor_home_routes() -> Router<app::AppState> {
     Router::new()
         .route("/home", get(advisors_homepage::advisors_homepage_handler))
         .route_layer(from_fn_with_state(
-            require_role(pool, &["advisor"]),
+            require_role(&["advisor", "board"]),
             middlewares::auth::require_role,
         ))
 }
 
-fn board_home_routes(pool: &PgPool) -> Router<app::AppState> {
+fn board_home_routes() -> Router<app::AppState> {
     Router::new()
-        .route("/board/home", get(board_homepage::board_homepage_handler))
+        // Board homepage hub: entry point to the board-reserved area.
+        .route("/board/home", get(board_homepage::board_home_handler))
         .route_layer(from_fn_with_state(
-            require_role(pool, &["board"]),
+            require_role(&["board", "prof"]),
+            middlewares::auth::require_role,
+        ))
+        // Board orders (ready orders) are reserved to board members.
+        .merge(board_orders_routes())
+}
+
+fn board_orders_routes() -> Router<app::AppState> {
+    Router::new()
+        .route("/board/orders", get(board_homepage::board_orders_handler))
+        .route_layer(from_fn_with_state(
+            require_role(&["board"]),
             middlewares::auth::require_role,
         ))
 }
 
-fn manage_users_routes(pool: &PgPool) -> Router<app::AppState> {
+fn manage_users_routes() -> Router<app::AppState> {
     Router::new()
         .route("/board/users", get(manage_users::manage_users_page))
         .route("/board/users/create", post(manage_users::create_user_handler))
         .route("/board/users/:id/update", post(manage_users::update_user_handler))
         .route("/board/users/:id/delete", post(manage_users::delete_user_handler))
         .route_layer(from_fn_with_state(
-            require_role(pool, &["board", "prof"]),
+            require_role(&["board", "prof"]),
             middlewares::auth::require_role,
         ))
 }
 
-fn prof_home_routes(pool: &PgPool) -> Router<app::AppState> {
+fn prof_home_routes() -> Router<app::AppState> {
     Router::new()
         .route("/prof", get(prof_homepage::prof_homepage_handler))
         .route_layer(from_fn_with_state(
-            require_role(pool, &["prof"]),
+            require_role(&["prof"]),
             middlewares::auth::require_role,
         ))
 }

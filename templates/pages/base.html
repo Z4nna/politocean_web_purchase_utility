@@ -23,10 +23,14 @@
         <div class="menu-toggle" onclick="toggleMenu()">☰</div>
         <nav id="menu">
             <a href="/home">Orders</a>
-            <a href="/board/home">Board reserved area</a>
-            <a href="/board/users">Manage users</a>
+            {% if is_board %}
+            <a href="/board/home">Board</a>
+            {% endif %}
             <a href="/settings">Settings</a>
             <a onclick="toggleTheme()">Toggle Theme</a>
+            <form action="/logout" method="post" class="menu-logout" style="margin: 0; padding: 0;">
+                <a onclick="this.closest('form').submit();">Logout</a>
+            </form>
         </nav>
     </header>
 

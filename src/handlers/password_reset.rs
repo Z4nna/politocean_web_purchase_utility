@@ -1,10 +1,10 @@
 use askama::Template;
-use axum::{Form, extract::{Query, State}, response::{Html, IntoResponse, Redirect, Response}};
+use axum::{Form, extract::{Query, State}, response::{Html, IntoResponse, Redirect, Response}, Extension};
 use tower_sessions::Session;
 use rand::RngCore;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 
-use crate::{data::errors, models::{app::AppState, password_reset::{ResetForm, ResetQuery}, templates}};
+use crate::{data::errors, models::{app::{AppState, CurrentUser}, password_reset::{ResetForm, ResetQuery}, templates}};
 
 pub async fn request_password_reset(
     State(app_state): State<AppState>,
@@ -42,6 +42,7 @@ pub async fn request_password_reset(
 
 pub async fn reset_password_page(
     State(app_state): State<AppState>,
+    Extension(current_user): Extension<CurrentUser>,
     Query(params): Query<ResetQuery>,
 ) -> Result<Response, errors::AppError> {
     // Validate token in DB
@@ -54,7 +55,7 @@ pub async fn reset_password_page(
     .map_err(|e| errors::DataError::FailedQuery(e.to_string()))?;
 
     if let Some(_record) = record {
-        Ok(Html(templates::ResetPasswordPageTemplate{token: params.token}.render().unwrap()).into_response())
+        Ok(Html(templates::ResetPasswordPageTemplate{token: params.token, is_board: current_user.can_access_board()}.render().unwrap()).into_response())
     } else {
         Err(errors::AppError::Database(errors::DataError::TokenError("Token not found or expired".to_string())))
     }

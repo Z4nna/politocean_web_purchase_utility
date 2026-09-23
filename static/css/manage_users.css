@@ -1,0 +1,81 @@
+/* Manage users page — builds on advisors_homepage.css (table) + palette.css */
+
+/* Keep the in-table selects compact instead of full-width */
+.orders-table select {
+    width: auto;
+    min-width: 120px;
+    margin-top: 0;
+    padding: 0.35rem 0.5rem;
+}
+
+/* Align the save/delete buttons with the row's inputs */
+.orders-table .button,
+.orders-table .inline-form button {
+    margin-top: 0;
+}
+
+/* Delete button uses the palette's red */
+.inline-form .delete-button,
+.inline-form button.delete-button {
+    background-color: var(--danger);
+    color: white;
+}
+.inline-form .delete-button:hover,
+.inline-form button.delete-button:hover {
+    background-color: var(--danger);
+    filter: brightness(0.85);
+}
+
+/* --- Active status as a green/red circle --- */
+
+/* Read-only indicator (used for the protected prof account) */
+.status-dot {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+.status-dot.active {
+    background-color: var(--success);
+}
+.status-dot.inactive {
+    background-color: var(--danger);
+}
+
+/* Editable checkbox rendered as a circle: green when active, red when not */
+.active-toggle {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    background-color: var(--danger);
+    cursor: pointer;
+    vertical-align: middle;
+    transition: background-color 0.2s ease;
+}
+.active-toggle:checked {
+    background-color: var(--success);
+}
+.active-toggle:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* --- Create-user form --- */
+.form-row {
+    margin-bottom: 1rem;
+}
+.form-row label {
+    margin-top: 0;
+    margin-bottom: 0.3rem;
+}
+/* The active toggle in the create form sits on its own line under the label */
+.form-row .active-toggle {
+    display: block;
+}

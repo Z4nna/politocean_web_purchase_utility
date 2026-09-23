@@ -71,6 +71,26 @@ nav#menu a:hover {
     background-color: var(--accent-color, #3a4b5a);
 }
 
+/* Logout lives in a form (for a POST request) but its link matches the other
+   menu items exactly, inheriting the nav#menu a styling. Reset the form box. */
+nav#menu form.menu-logout {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+nav#menu form.menu-logout a {
+    cursor: pointer;
+}
+
+nav#menu form.menu-logout a:hover {
+    background-color: var(--danger);
+    color: white;
+}
+
 main {
     padding-top: 6.5vh;
 }

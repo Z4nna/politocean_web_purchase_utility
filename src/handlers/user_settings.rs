@@ -1,17 +1,15 @@
 use askama::Template;
-use axum::{Form, extract::State, response::{Html, IntoResponse, Redirect, Response}};
+use axum::{Form, extract::State, response::{Html, IntoResponse, Redirect, Response}, Extension};
 use serde::Deserialize;
 use tower_sessions::Session;
 use validator::Validate;
-use crate::{data::errors, models::{app::AppState, templates::UserSettingsPageTemplate, user_info::UserInfo}};
+use crate::{data::errors, models::{app::{AppState, CurrentUser}, templates::UserSettingsPageTemplate, user_info::UserInfo}};
 
 pub async fn user_settings_handler(
     State(app_state): State<AppState>,
-    session: Session,
+    Extension(current_user): Extension<CurrentUser>,
 ) -> Result<Response, errors::AppError> {
-    let user_id = session.get::<i32>("authenticated_user_id")
-    .await
-    .map_err(|e| errors::AppError::Session(e))?;
+    let user_id = current_user.user_id;
 
     let user_info: UserInfo = sqlx::query_as!(
         UserInfo,
@@ -23,7 +21,8 @@ pub async fn user_settings_handler(
     .map_err(|e| errors::DataError::FailedQuery("Failed to fetch user informations".to_string() + &e.to_string()))?;
 
     Ok(Html(UserSettingsPageTemplate{
-        user_info: user_info
+        user_info: user_info,
+        is_board: current_user.can_access_board(),
     }.render().unwrap()).into_response())
 }
 

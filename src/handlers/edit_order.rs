@@ -2,10 +2,10 @@ use askama::Template;
 use umya_spreadsheet::{Spreadsheet};
 use crate::{
     handlers,
-    data::{errors::{self, DataError}, excel, item, order, user}, models::{app::AppState, templates::{CoffeePageTemplate, EditOrderTemplate}}
+    data::{errors::{self, DataError}, excel, item, order, user}, models::{app::{AppState, CurrentUser}, templates::{CoffeePageTemplate, EditOrderTemplate}}
 };
 use axum::{
-    body::{Body, Bytes}, extract::{Multipart, Path, State}, http::{header, HeaderValue, StatusCode}, response::{Html, IntoResponse, Redirect, Response}, Form, Json
+    body::{Body, Bytes}, extract::{Multipart, Path, State}, http::{header, HeaderValue, StatusCode}, response::{Html, IntoResponse, Redirect, Response}, Extension, Form, Json
 };
 use tower_sessions::Session;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
@@ -15,7 +15,7 @@ use std::io::Cursor;
 
 pub async fn edit_order_handler(
     State(app_state): State<AppState>,
-    _session: Session,
+    Extension(current_user): Extension<CurrentUser>,
     Path(order_id): Path<i32>,
 ) -> Result<Response, errors::AppError> {
     let (areas, sub_areas): (Vec<String>, Vec<String>) = sqlx::query!("SELECT division, sub_area FROM areas")
@@ -49,6 +49,7 @@ pub async fn edit_order_handler(
         sub_areas: HashSet::<String>::from_iter(sub_areas).into_iter().collect(),
         proposals: proposals,
         projects: projects,
+        is_board: current_user.can_access_board(),
     }.render().unwrap();
     Ok(Html(html_string).into_response())
 }

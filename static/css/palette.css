@@ -75,6 +75,7 @@ label {
 
 input[type="text"],
 input[type="number"],
+input[type="email"],
 select {
     background-color: var(--bg);
     width: 100%;

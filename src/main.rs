@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 #[tokio::main]
 async fn main() {
-    let addr = "127.0.0.1:3000";
+    let addr = "127.0.0.1:8080";
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     
     let pool = init::database_connection().await;
@@ -21,6 +21,7 @@ async fn main() {
         current_user: app::CurrentUser {
             is_authenticated: false,
             user_id: None,
+            role: None,
         },
         bom_jobs: Arc::new(Mutex::new(HashMap::new())),
     };

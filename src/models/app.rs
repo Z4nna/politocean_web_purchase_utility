@@ -13,4 +13,13 @@ pub struct AppState {
 pub struct CurrentUser {
     pub is_authenticated: bool,
     pub user_id: Option<i32>,
+    pub role: Option<String>,
+}
+
+impl CurrentUser {
+    /// Whether the user may access the board-reserved area (board members and
+    /// the professor). Used both by the route guards and the menu rendering.
+    pub fn can_access_board(&self) -> bool {
+        matches!(self.role.as_deref(), Some("board") | Some("prof"))
+    }
 }

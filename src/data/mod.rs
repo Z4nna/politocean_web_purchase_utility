@@ -5,3 +5,4 @@ pub mod item;
 pub mod excel;
 pub mod mouser_apis;
 pub mod digikey_apis;
+pub mod mail;

@@ -5,6 +5,7 @@
 {% block head %}
 <link rel="stylesheet" href="/static/css/palette.css" />
 <link rel="stylesheet" href="/static/css/advisors_homepage.css" />
+<link rel="stylesheet" href="/static/css/manage_users.css" />
 {% endblock %}
 
 {% block content %}
@@ -30,18 +31,20 @@
                     <td>{{ user.id }}</td>
                     <td>{{ user.username }}</td>
                     {% if user.role == "prof" %}
-                        <td>{{ user.active }}</td>
+                        <td>
+                            <span class="status-dot {% if user.active %}active{% else %}inactive{% endif %}"
+                                  title="{% if user.active %}Active{% else %}Inactive{% endif %}"></span>
+                        </td>
                         <td>{{ user.role }}</td>
                         <td>{{ user.belonging_area_division }}</td>
                         <td>{{ user.belonging_area_sub_area }}</td>
                         <td>Protected account</td>
                     {% else %}
                         <td>
-                            <form id="update-{{ user.id }}" action="/board/users/{{ user.id }}/update" method="post"></form>
-                            <select name="active" form="update-{{ user.id }}">
-                                <option value="true" {% if user.active %}selected{% endif %}>Active</option>
-                                <option value="false" {% if !user.active %}selected{% endif %}>Inactive</option>
-                            </select>
+                            <form id="update-{{ user.id }}" action="/board/users/{{ user.id }}/update" method="post" class="inline-form"></form>
+                            <input type="checkbox" class="active-toggle" name="active" value="true"
+                                   form="update-{{ user.id }}" {% if user.active %}checked{% endif %}
+                                   title="Toggle active status">
                         </td>
                         <td>
                             <select name="role" form="update-{{ user.id }}">
@@ -67,7 +70,7 @@
                         <td class="actions-cell">
                             <button type="submit" form="update-{{ user.id }}" class="button">Save</button>
                             <form action="/board/users/{{ user.id }}/delete" method="post" class="inline-form action" onsubmit="return confirm('Delete user {{ user.username }}?');">
-                                <button type="submit" class="button">Delete</button>
+                                <button type="submit" class="button delete-button">Delete</button>
                             </form>
                         </td>
                     {% endif %}
@@ -87,18 +90,12 @@
         </div>
         <div class="form-row">
             <label for="email">Email:</label>
-            <input type="email" id="email" name="email" placeholder="Optional">
-        </div>
-        <div class="form-row">
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required>
+            <input type="email" id="email" name="email" required>
         </div>
         <div class="form-row">
             <label for="active">Active:</label>
-            <select id="active" name="active">
-                <option value="true" selected>Active</option>
-                <option value="false">Inactive</option>
-            </select>
+            <input type="checkbox" id="active" class="active-toggle" name="active" value="true" checked
+                   title="Toggle active status">
         </div>
         <div class="form-row">
             <label for="role">Role:</label>

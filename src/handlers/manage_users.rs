@@ -2,14 +2,13 @@ use askama::Template;
 use axum::{
     extract::{Path, State},
     response::{Html, IntoResponse, Redirect, Response},
-    Form,
+    Extension, Form,
 };
 use serde::Deserialize;
-use tower_sessions::Session;
 
 use crate::{
-    data::{errors, user},
-    models::{app::AppState, templates::ManageUsersTemplate},
+    data::{errors, mail, user},
+    models::{app::{AppState, CurrentUser}, templates::ManageUsersTemplate},
 };
 
 // Access to every handler in this module is gated by the `require_role`
@@ -17,13 +16,9 @@ use crate::{
 
 pub async fn manage_users_page(
     State(app_state): State<AppState>,
-    session: Session,
+    Extension(current_user): Extension<CurrentUser>,
 ) -> Result<Response, errors::AppError> {
-    let current_user_id = session
-        .get::<i32>("authenticated_user_id")
-        .await
-        .map_err(errors::AppError::Session)?
-        .unwrap_or(-1);
+    let current_user_id = current_user.user_id.unwrap_or(-1);
 
     let pool = &app_state.connection_pool;
     let html_string = ManageUsersTemplate {
@@ -31,6 +26,7 @@ pub async fn manage_users_page(
         divisions: user::get_divisions(pool).await?,
         sub_areas: user::get_sub_areas(pool).await?,
         roles: user::get_assignable_roles(pool).await?,
+        is_board: current_user.can_access_board(),
     }
     .render()
     .unwrap();
@@ -42,11 +38,17 @@ pub async fn manage_users_page(
 pub struct CreateUserForm {
     username: String,
     email: String,
-    password: String,
     role: String,
-    active: String,
+    // A checkbox is only submitted when checked, so absence means "inactive".
+    active: Option<String>,
     belonging_area_division: String,
     belonging_area_sub_area: String,
+}
+
+/// Derives a throwaway initial password from the username. It is intentionally
+/// not secure: the user is expected to change it as soon as they log in.
+fn temporary_password(username: &str) -> String {
+    format!("{}-PoliTOcean1", username)
 }
 
 pub async fn create_user_handler(
@@ -59,19 +61,36 @@ pub async fn create_user_handler(
     }
 
     let email = form.email.trim();
-    let email = if email.is_empty() { None } else { Some(email) };
+    if email.is_empty() {
+        return Err(errors::DataError::FailedQuery("Email is required".to_string()).into());
+    }
+
+    let username = form.username.trim();
+    let temp_password = temporary_password(username);
 
     user::create_user(
         &app_state.connection_pool,
-        form.username.trim(),
-        email,
-        form.password.trim(),
-        form.active == "true",
+        username,
+        Some(email),
+        &temp_password,
+        form.active.is_some(),
         form.role.trim(),
         form.belonging_area_division.trim(),
         form.belonging_area_sub_area.trim(),
     )
     .await?;
+
+    // Send the new user their username and temporary password.
+    let subject = "PoliTOcean: il tuo account è stato creato";
+    let body = format!(
+        "Ciao {username},\n\n\
+         È stato creato un account per te sul portale PoliTOcean.\n\n\
+         Username: {username}\n\
+         Password temporanea: {temp_password}\n\n\
+         Effettua l'accesso e cambia la password il prima possibile.\n\n\
+         Team PoliTOcean."
+    );
+    mail::send_plaintext_email(email, subject, body).await?;
 
     Ok(Redirect::to("/board/users").into_response())
 }
@@ -79,7 +98,8 @@ pub async fn create_user_handler(
 #[derive(Deserialize)]
 pub struct UpdateUserForm {
     role: String,
-    active: String,
+    // A checkbox is only submitted when checked, so absence means "inactive".
+    active: Option<String>,
     belonging_area_division: String,
     belonging_area_sub_area: String,
 }
@@ -99,7 +119,7 @@ pub async fn update_user_handler(
         id,
         form.belonging_area_division.trim(),
         form.belonging_area_sub_area.trim(),
-        form.active == "true",
+        form.active.is_some(),
         form.role.trim(),
     )
     .await?;
