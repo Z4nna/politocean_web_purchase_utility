@@ -26,11 +26,12 @@ pub async fn login_handler(
     ).await?;
     session.insert("authenticated_user_id", user_id).await?;
     println!("User logged in with id: {}.", user_id);
-    // check if user is prof, redirect to his homepage
+    // redirect the user to the homepage matching their role
     let user_role = user::get_user_role(&app_state.connection_pool, user_id).await?;
-    if user_role == "prof" {
-        Ok(Redirect::to("/prof").into_response())
-    } else {
-        Ok(Redirect::to("/home").into_response())
-    }
+    let destination = match user_role.as_str() {
+        "prof" => "/prof",
+        "board" => "/board/home",
+        _ => "/home",
+    };
+    Ok(Redirect::to(destination).into_response())
 }
