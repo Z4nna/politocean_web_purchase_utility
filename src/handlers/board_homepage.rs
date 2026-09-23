@@ -16,9 +16,3 @@ pub async fn board_homepage_handler(
     }.render().unwrap();
     Ok(Html(html_string).into_response())
 }
-
-pub async fn board_manage_users() -> Response {
-    // get all users except for board ones
-    // display them in a table (add possibility to remove an user and add a new one)
-    Html("<h1>Work in progress</h1> <a href=\"/home\"></a>").into_response()
-}

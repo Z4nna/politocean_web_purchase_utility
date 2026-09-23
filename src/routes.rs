@@ -1,5 +1,5 @@
 use axum::{middleware::{self, from_fn_with_state}, routing::{get, post}, Router};
-use crate::handlers::{advisors_homepage, auth, board_homepage, edit_order, new_order, order_operations, password_reset, prof_homepage, user_settings};
+use crate::handlers::{advisors_homepage, auth, board_homepage, edit_order, manage_users, new_order, order_operations, password_reset, prof_homepage, user_settings};
 use crate::middlewares::auth::RoleGuard;
 use crate::models::app;
 use sqlx::PgPool;
@@ -65,7 +65,10 @@ fn board_home_routes(pool: &PgPool) -> Router<app::AppState> {
 
 fn manage_users_routes(pool: &PgPool) -> Router<app::AppState> {
     Router::new()
-        .route("/board/users", get(board_homepage::board_manage_users))
+        .route("/board/users", get(manage_users::manage_users_page))
+        .route("/board/users/create", post(manage_users::create_user_handler))
+        .route("/board/users/:id/update", post(manage_users::update_user_handler))
+        .route("/board/users/:id/delete", post(manage_users::delete_user_handler))
         .route_layer(from_fn_with_state(
             require_role(pool, &["board", "prof"]),
             middlewares::auth::require_role,

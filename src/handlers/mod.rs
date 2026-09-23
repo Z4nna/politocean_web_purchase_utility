@@ -7,3 +7,4 @@ pub mod prof_homepage;
 pub mod order_operations;
 pub mod password_reset;
 pub mod user_settings;
+pub mod manage_users;

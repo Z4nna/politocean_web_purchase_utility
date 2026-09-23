@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/palette.css" />
+<link rel="stylesheet" href="/static/css/advisors_homepage.css" />
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="page-title">Manage Users</h1>
+
+    <div class="table-wrapper">
+        <table class="orders-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Active</th>
+                    <th>Role</th>
+                    <th>Area</th>
+                    <th>Sub area</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.username }}</td>
+                    {% if user.role == "prof" %}
+                        <td>{{ user.active }}</td>
+                        <td>{{ user.role }}</td>
+                        <td>{{ user.belonging_area_division }}</td>
+                        <td>{{ user.belonging_area_sub_area }}</td>
+                        <td>Protected account</td>
+                    {% else %}
+                        <td>
+                            <form id="update-{{ user.id }}" action="/board/users/{{ user.id }}/update" method="post"></form>
+                            <select name="active" form="update-{{ user.id }}">
+                                <option value="true" {% if user.active %}selected{% endif %}>Active</option>
+                                <option value="false" {% if !user.active %}selected{% endif %}>Inactive</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select name="role" form="update-{{ user.id }}">
+                                {% for role in roles %}
+                                <option value="{{ role }}" {% if role == user.role.as_str() %}selected{% endif %}>{{ role }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <select name="belonging_area_division" form="update-{{ user.id }}">
+                                {% for division in divisions %}
+                                <option value="{{ division }}" {% if division == user.belonging_area_division.as_str() %}selected{% endif %}>{{ division }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <select name="belonging_area_sub_area" form="update-{{ user.id }}">
+                                {% for sub_area in sub_areas %}
+                                <option value="{{ sub_area }}" {% if sub_area == user.belonging_area_sub_area.as_str() %}selected{% endif %}>{{ sub_area }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td class="actions-cell">
+                            <button type="submit" form="update-{{ user.id }}" class="button">Save</button>
+                            <form action="/board/users/{{ user.id }}/delete" method="post" class="inline-form action" onsubmit="return confirm('Delete user {{ user.username }}?');">
+                                <button type="submit" class="button">Delete</button>
+                            </form>
+                        </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <hr>
+
+    <h2 class="page-title">Create new user</h2>
+    <form action="/board/users/create" method="post" class="user-info-form">
+        <div class="form-row">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div class="form-row">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" placeholder="Optional">
+        </div>
+        <div class="form-row">
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <div class="form-row">
+            <label for="active">Active:</label>
+            <select id="active" name="active">
+                <option value="true" selected>Active</option>
+                <option value="false">Inactive</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="role">Role:</label>
+            <select id="role" name="role" required>
+                {% for role in roles %}
+                <option value="{{ role }}">{{ role }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="create_division">Area:</label>
+            <select id="create_division" name="belonging_area_division" required>
+                {% for division in divisions %}
+                <option value="{{ division }}">{{ division }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="create_sub_area">Sub area:</label>
+            <select id="create_sub_area" name="belonging_area_sub_area" required>
+                {% for sub_area in sub_areas %}
+                <option value="{{ sub_area }}">{{ sub_area }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="button submit-button">➕ Create user</button>
+    </form>
+</div>
+{% endblock %}

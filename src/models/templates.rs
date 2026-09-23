@@ -68,3 +68,12 @@ pub struct ResetPasswordPageTemplate {
 pub struct UserSettingsPageTemplate {
     pub user_info: UserInfo,
 }
+
+#[derive(Template)]
+#[template(path = "pages/manage_users.html")]
+pub struct ManageUsersTemplate {
+    pub users: Vec<UserInfo>,
+    pub divisions: Vec<String>,
+    pub sub_areas: Vec<String>,
+    pub roles: Vec<String>,
+}
