@@ -30,7 +30,6 @@
                             <th>Area (division)</th>
                             <th>Sub area</th>
                             <th>Status</th>
-                            <th>Rename</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -52,8 +51,6 @@
                                     <input type="hidden" name="old_sub_area" value="{{ area.sub_area }}">
                                     <button type="submit" class="button">Save rename</button>
                                 </form>
-                            </td>
-                            <td class="actions-cell">
                                 {% if area.archived %}
                                 <form action="/board/options/areas/unarchive" method="post" class="inline-form">
                                     <input type="hidden" name="division" value="{{ area.division }}">
@@ -106,7 +103,6 @@
                             <th>Name</th>
                             <th>Status</th>
                             <th>Rename mode</th>
-                            <th>Rename</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -129,8 +125,6 @@
                                     <input type="hidden" name="old_name" value="{{ project.name }}">
                                     <button type="submit" class="button">Save rename</button>
                                 </form>
-                            </td>
-                            <td class="actions-cell">
                                 {% if project.archived %}
                                 <form action="/board/options/projects/unarchive" method="post" class="inline-form">
                                     <input type="hidden" name="name" value="{{ project.name }}">
@@ -177,7 +171,6 @@
                             <th>Name</th>
                             <th>Status</th>
                             <th>Rename mode</th>
-                            <th>Rename</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -200,8 +193,6 @@
                                     <input type="hidden" name="old_name" value="{{ proposal.name }}">
                                     <button type="submit" class="button">Save rename</button>
                                 </form>
-                            </td>
-                            <td class="actions-cell">
                                 {% if proposal.archived %}
                                 <form action="/board/options/proposals/unarchive" method="post" class="inline-form">
                                     <input type="hidden" name="name" value="{{ proposal.name }}">
