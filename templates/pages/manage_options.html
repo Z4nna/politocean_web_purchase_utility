@@ -59,7 +59,7 @@
                                 </form>
                                 {% else %}
                                 <form action="/board/options/areas/delete" method="post" class="inline-form"
-                                      onsubmit="return confirm('Delete area {{ area.division }} / {{ area.sub_area }}?');">
+                                      data-confirm="Delete area {{ area.division }} / {{ area.sub_area }}?" onsubmit="return confirm(this.dataset.confirm);">
                                     <input type="hidden" name="division" value="{{ area.division }}">
                                     <input type="hidden" name="sub_area" value="{{ area.sub_area }}">
                                     <button type="submit" class="button delete-button">Delete</button>
@@ -132,7 +132,7 @@
                                 </form>
                                 {% else %}
                                 <form action="/board/options/projects/delete" method="post" class="inline-form"
-                                      onsubmit="return confirm('Archive project {{ project.name }}?');">
+                                      data-confirm="Archive project {{ project.name }}?" onsubmit="return confirm(this.dataset.confirm);">
                                     <input type="hidden" name="name" value="{{ project.name }}">
                                     <button type="submit" class="button delete-button">Delete (archive)</button>
                                 </form>
@@ -200,7 +200,7 @@
                                 </form>
                                 {% else %}
                                 <form action="/board/options/proposals/delete" method="post" class="inline-form"
-                                      onsubmit="return confirm('Archive proposal {{ proposal.name }}?');">
+                                      data-confirm="Archive proposal {{ proposal.name }}?" onsubmit="return confirm(this.dataset.confirm);">
                                     <input type="hidden" name="name" value="{{ proposal.name }}">
                                     <button type="submit" class="button delete-button">Delete (archive)</button>
                                 </form>

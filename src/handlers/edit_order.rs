@@ -2,10 +2,10 @@ use askama::Template;
 use umya_spreadsheet::{Spreadsheet};
 use crate::{
     handlers,
-    data::{errors::{self, DataError}, excel, item, options, order, user}, models::{app::{AppState, CurrentUser}, templates::{CoffeePageTemplate, EditOrderTemplate}}
+    data::{errors::{self, DataError}, item, options, order, user}, models::{app::{AppState, CurrentUser}, templates::{CoffeePageTemplate, EditOrderTemplate}}
 };
 use axum::{
-    body::{Body, Bytes}, extract::{Multipart, Path, State}, http::{header, HeaderValue, StatusCode}, response::{Html, IntoResponse, Redirect, Response}, Extension, Form, Json
+    body::Body, extract::{Multipart, Path, State}, http::{header, HeaderValue, StatusCode}, response::{Html, IntoResponse, Redirect, Response}, Extension, Form, Json
 };
 use tower_sessions::Session;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
@@ -358,10 +358,13 @@ pub async fn download_bom_handler(
 
         let zip_bytes = buffer.clone().into_inner();
 
+        // The filename comes from user-entered data and may not be a valid header value.
+        let content_disposition = HeaderValue::from_str(&content_disposition)
+            .unwrap_or(HeaderValue::from_static("attachment; filename=\"bom.zip\""));
         let response = Response::builder()
             .status(StatusCode::OK)
             .header(header::CONTENT_TYPE, "application/zip")
-            .header(header::CONTENT_DISPOSITION, HeaderValue::from_str(&content_disposition).unwrap())
+            .header(header::CONTENT_DISPOSITION, content_disposition)
             .body(Body::from(zip_bytes))
             .unwrap();
 
@@ -456,28 +459,14 @@ pub async fn download_mouser_cart_handler(
 pub async fn bulk_add_handler(
     State(app_state): State<AppState>,
     Path(order_id): Path<i32>,
-    mut multipart: Multipart,
+    multipart: Multipart,
 ) -> Result<Response, errors::AppError> {
-    let mut fields: HashMap<String, String> = HashMap::new();
-    let mut file_bytes: Option<Bytes> = None;
-
-    while let Some(field) = multipart.next_field().await.unwrap() {
-        let name = field.name().unwrap().to_string();
-
-        if name == "file" {
-            file_bytes = Some(field.bytes().await.unwrap());
-        } else {
-            // Normal text field
-            let text = field.text().await.unwrap();
-            fields.insert(name, text);
-        }
-    }
-    let spreadsheet = excel::load_from_bytes(&file_bytes.unwrap()).map_err(|e| errors::DataError::Internal(e))?;
+    let (fields, spreadsheet) = handlers::new_order::read_bom_upload(multipart).await?;
     order::bulk_add_from_bom(
         &app_state.connection_pool,
         order_id,
-        fields.get("proposal").unwrap().to_string(),
-        fields.get("project").unwrap().to_string(),
+        handlers::new_order::required_field(&fields, "proposal")?,
+        handlers::new_order::required_field(&fields, "project")?,
         &spreadsheet
     ).await?;
     return Ok(Redirect::to("/home").into_response());

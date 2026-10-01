@@ -103,16 +103,23 @@
                 </div>
             </div>
 
+            {# Item values go through data attributes (HTML-escaped), never into JS source. #}
+            {% for item in items %}
+            <span class="item-data" hidden
+                  data-proposal="{{ item.proposal }}"
+                  data-project="{{ item.project }}"
+                  data-manufacturer="{{ item.manufacturer }}"
+                  data-manufacturer-pn="{{ item.manufacturer_pn }}"
+                  data-quantity="{{ item.quantity }}"></span>
+            {% endfor %}
             <script>
-                {% for item in items %}
-                addItemEntry(
-                    "{{ item.proposal }}",
-                    "{{ item.project }}",
-                    "{{ item.manufacturer }}",
-                    "{{ item.manufacturer_pn }}",
-                    {{ item.quantity }}
-                );
-                {% endfor %}
+                document.querySelectorAll('.item-data').forEach(el => addItemEntry(
+                    el.dataset.proposal,
+                    el.dataset.project,
+                    el.dataset.manufacturer,
+                    el.dataset.manufacturerPn,
+                    Number(el.dataset.quantity)
+                ));
             </script>
 
             <button type="button" class="button add-button" onclick="addItemEntry()">➕ Add new item</button><br><br>

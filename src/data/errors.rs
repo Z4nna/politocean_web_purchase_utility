@@ -28,6 +28,15 @@ pub enum DataError {
 
     #[error("Token error: {0}")]
     TokenError(String),
+
+    #[error("{0}")]
+    Unauthorized(String),
+
+    #[error("{0}")]
+    BadRequest(String),
+
+    #[error("{0}")]
+    TooManyRequests(String),
 }
 
 #[derive(Error, Debug)]
@@ -45,28 +54,31 @@ pub enum AppError {
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response<Body> {
-        let (status, response) = match self {
-            AppError::Database(e) => server_error(e.to_string()),
-            AppError::Template(e) => server_error(e.to_string()),
-            AppError::Session(e) => server_error(e.to_string()),
+        // Full detail goes to the server log only. Raw database / internal errors
+        // are never sent to the client; hand-written messages are.
+        eprintln!("Request failed: {:?}", self);
+        let (status, message) = match self {
+            AppError::Database(e @ DataError::Unauthorized(_)) => (StatusCode::UNAUTHORIZED, e.to_string()),
+            AppError::Database(e @ DataError::BadRequest(_)) => (StatusCode::BAD_REQUEST, e.to_string()),
+            AppError::Database(e @ DataError::TooManyRequests(_)) => (StatusCode::TOO_MANY_REQUESTS, e.to_string()),
+            AppError::Database(e @ (DataError::FailedQuery(_) | DataError::TokenError(_) | DataError::Mail(_))) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+            _ => (StatusCode::INTERNAL_SERVER_ERROR, "Something went wrong.".to_string()),
         };
 
-        (status, response).into_response()
-    }
-}
-
-fn server_error(e: String) -> (StatusCode, Response) {
-    let html_string = format!(
-        "<!DOCTYPE html>
+        let title = status.canonical_reason().unwrap_or("Error");
+        let html_string = format!(
+            "<!DOCTYPE html>
         <html>
-        <head><title>500 Internal Server Error</title></head>
+        <head><title>{code} {title}</title></head>
         <body>
-            <h1>Internal Server Error</h1>
-            <pre>{}</pre>
+            <h1>{title}</h1>
+            <pre>{message}</pre>
         </body>
         </html>",
-        e
-    );
+            code = status.as_u16(),
+            message = message.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;"),
+        );
 
-    (StatusCode::INTERNAL_SERVER_ERROR, Html(html_string).into_response())
+        (status, Html(html_string)).into_response()
+    }
 }

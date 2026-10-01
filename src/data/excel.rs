@@ -93,7 +93,7 @@ pub fn save_to_file(book: &Spreadsheet) {
 }
 
 pub fn parse_kicad_bom_file(book: &Spreadsheet) -> Result<Vec<KiCadItem>, String> {
-    let sheet = book.get_sheet(&0).expect("Sheet not found");
+    let sheet = book.get_sheet(&0).ok_or("Sheet not found")?;
     let mut items: Vec<KiCadItem> = Vec::new();
 
     for row_num in 2..=sheet.get_highest_row() {

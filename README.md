@@ -6,7 +6,7 @@ Proposal and Project fields for each item they want to buy. After this, the tool
 ## How to use
 1. Setup your database connection and APIs, setting up the .env file.
 2. Run SQLx migrations.
-3. Just cargo run, access the website on "http://yourip:3000"
+3. Just cargo run, access the website on "http://yourip:8080"
 ### .env file setup
 The .env file should be located in the root directory of the project. It should contain the following variables:
 ```

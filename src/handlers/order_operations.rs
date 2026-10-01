@@ -23,10 +23,10 @@ pub async fn order_op_page_handler(
 
 pub async fn list_orders_handler(
     State(app_state): State<AppState>,
-    _session: Session
+    Extension(current_user): Extension<CurrentUser>,
 ) -> impl IntoResponse {
-    // should change behavoir based on whether the calling user is board or not
-    let orders = sqlx::query_as!(
+    // Board members / the professor see every order, everyone else only their own.
+    let mut orders = sqlx::query_as!(
         Order,
         "SELECT id, description, author_id FROM orders ORDER BY id DESC",
         //session.get::<i32>("authenticated_user_id").await.unwrap_or(None).unwrap_or(-1)
@@ -34,6 +34,10 @@ pub async fn list_orders_handler(
     .fetch_all(&app_state.connection_pool)
     .await
     .unwrap_or_default();
+
+    if !current_user.can_access_board() {
+        orders.retain(|o| Some(o.author_id) == current_user.user_id);
+    }
 
     Json(orders)
 }
@@ -47,7 +51,8 @@ pub async fn scale_order_handler (
     let order_author_id = sqlx::query! (
         "SELECT author_id FROM orders WHERE id = $1",
         payload.order_id
-    ).fetch_one(&app_state.connection_pool).await.unwrap().author_id;
+    ).fetch_one(&app_state.connection_pool).await
+    .map_err(|_| errors::AppError::Database(errors::DataError::FailedQuery("Order not found.".to_string())))?.author_id;
     
     if session.get::<i32>("authenticated_user_id").await.unwrap_or(None).unwrap_or(-1) != order_author_id {
        return Err(errors::AppError::Database(errors::DataError::FailedQuery("Not authorized.".to_string())));
@@ -98,7 +103,12 @@ pub async fn merge_order_handler (
     ).fetch_all(&app_state.connection_pool)
     .await.map_err(|e| errors::AppError::Database(errors::DataError::FailedQuery(e.to_string())))?
     .iter().map(|a| a.author_id).collect();
-    if user_role != "board".to_string() && user_id != author_ids[0] && user_id != author_ids[1] {
+    // Both orders must exist and be distinct (merging an order into itself would
+    // delete it), and a non-board user must be the author of both.
+    if payload.source_id == payload.target_id || author_ids.len() != 2 {
+        return Err(errors::AppError::Database(errors::DataError::FailedQuery("Invalid orders.".to_string())));
+    }
+    if user_role != "board" && author_ids.iter().any(|a| *a != user_id) {
         return Err(errors::AppError::Database(errors::DataError::FailedQuery("Not authorized.".to_string())));
     }
     println!("authorised");

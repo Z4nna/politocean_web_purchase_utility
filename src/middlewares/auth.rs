@@ -2,8 +2,8 @@ use crate::data::errors::AppError;
 use crate::data::user;
 use crate::models::app::{AppState, CurrentUser};
 use axum::{
-    extract::{Request, State},
-    http::header::CACHE_CONTROL,
+    extract::{Path, Request, State},
+    http::{header::CACHE_CONTROL, StatusCode},
     middleware::Next,
     response::{IntoResponse, Redirect, Response},
     Extension,
@@ -25,12 +25,18 @@ pub async fn authenticate(
     };
 
     if let Some(id) = user_id {
-        current_user.is_authenticated = true;
-        current_user.user_id = Some(id);
         // Resolve the role once per request so both the guards and the page
-        // templates (menu rendering) can rely on it.
-        if let Ok(role) = user::get_user_role(&app_state.connection_pool, id).await {
-            current_user.role = Some(role);
+        // templates (menu rendering) can rely on it. A session whose user was
+        // deleted or deactivated is not authenticated.
+        // The session also carries the password hash it was created with, so a
+        // password change signs out every other session of that user.
+        let password_stamp = session.get::<String>("password_stamp").await?;
+        if let Ok((role, password_hash)) = user::get_role_and_password_hash(&app_state.connection_pool, id).await {
+            if password_stamp.as_deref() == Some(password_hash.as_str()) {
+                current_user.is_authenticated = true;
+                current_user.user_id = Some(id);
+                current_user.role = Some(role);
+            }
         }
     }
     req.extensions_mut().insert(current_user);
@@ -52,6 +58,29 @@ pub async fn required_authentication(
         .insert(CACHE_CONTROL, "no-store".parse().unwrap());
 
     res
+}
+
+/// Middleware for `/orders/:id/...` routes: only the order's author or a board
+/// member / the professor may touch the order.
+pub async fn require_order_access(
+    State(app_state): State<AppState>,
+    Extension(current_user): Extension<CurrentUser>,
+    Path(order_id): Path<i32>,
+    req: Request,
+    next: Next,
+) -> Response {
+    let author_id = sqlx::query_scalar::<_, i32>("SELECT author_id FROM orders WHERE id = $1")
+        .bind(order_id)
+        .fetch_optional(&app_state.connection_pool)
+        .await
+        .ok()
+        .flatten();
+
+    if current_user.can_access_board() || (author_id.is_some() && author_id == current_user.user_id) {
+        next.run(req).await
+    } else {
+        StatusCode::FORBIDDEN.into_response()
+    }
 }
 
 /// State carried by the [`require_role`] middleware: the set of roles allowed to

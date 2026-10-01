@@ -94,6 +94,9 @@ pub struct ManageUsersTemplate {
     pub users: Vec<UserInfo>,
     pub divisions: Vec<String>,
     pub sub_areas: Vec<String>,
+    // Every (division, sub_area) pair, so the client can constrain the sub-area
+    // dropdowns to combinations that actually exist.
+    pub area_pairs: Vec<AreaRow>,
     pub roles: Vec<String>,
     pub is_board: bool,
 }

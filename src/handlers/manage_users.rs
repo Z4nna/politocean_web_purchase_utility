@@ -4,10 +4,12 @@ use axum::{
     response::{Html, IntoResponse, Redirect, Response},
     Extension, Form,
 };
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
+use rand::RngCore;
 use serde::Deserialize;
 
 use crate::{
-    data::{errors, mail, user},
+    data::{errors, mail, options, user},
     models::{app::{AppState, CurrentUser}, templates::ManageUsersTemplate},
 };
 
@@ -25,7 +27,8 @@ pub async fn manage_users_page(
         users: user::get_users_except(pool, current_user_id).await?,
         divisions: user::get_divisions(pool).await?,
         sub_areas: user::get_sub_areas(pool).await?,
-        roles: user::get_assignable_roles(pool).await?,
+        area_pairs: options::list_areas(pool).await?,
+        roles: user::get_assignable_roles(),
         is_board: current_user.can_access_board(),
     }
     .render()
@@ -45,20 +48,29 @@ pub struct CreateUserForm {
     belonging_area_sub_area: String,
 }
 
-/// Derives a throwaway initial password from the username. It is intentionally
-/// not secure: the user is expected to change it as soon as they log in.
-fn temporary_password(username: &str) -> String {
-    format!("{}-PoliTOcean1", username)
+/// Random throwaway initial password, emailed to the new user. It must not be
+/// derivable from the username, or anyone could log in to a fresh account.
+fn temporary_password() -> String {
+    let mut random_bytes = [0u8; 12];
+    rand::thread_rng().fill_bytes(&mut random_bytes);
+    URL_SAFE_NO_PAD.encode(random_bytes)
+}
+
+/// Only roles from the assignable list may be granted: this rejects 'prof'
+/// (a unique account) and any made-up role, after trimming.
+fn validate_role(role: &str) -> Result<(), errors::AppError> {
+    if user::get_assignable_roles().iter().any(|r| r == role) {
+        Ok(())
+    } else {
+        Err(errors::DataError::BadRequest("Invalid role".to_string()).into())
+    }
 }
 
 pub async fn create_user_handler(
     State(app_state): State<AppState>,
     Form(form): Form<CreateUserForm>,
 ) -> Result<Response, errors::AppError> {
-    // 'prof' is a unique account and can never be assigned to anyone.
-    if form.role == "prof" {
-        return Err(errors::DataError::FailedQuery("Cannot assign the 'prof' role".to_string()).into());
-    }
+    validate_role(form.role.trim())?;
 
     let email = form.email.trim();
     if email.is_empty() {
@@ -66,7 +78,7 @@ pub async fn create_user_handler(
     }
 
     let username = form.username.trim();
-    let temp_password = temporary_password(username);
+    let temp_password = temporary_password();
 
     user::create_user(
         &app_state.connection_pool,
@@ -109,10 +121,7 @@ pub async fn update_user_handler(
     Path(id): Path<i32>,
     Form(form): Form<UpdateUserForm>,
 ) -> Result<Response, errors::AppError> {
-    // 'prof' is a unique account and can never be assigned to anyone.
-    if form.role == "prof" {
-        return Err(errors::DataError::FailedQuery("Cannot assign the 'prof' role".to_string()).into());
-    }
+    validate_role(form.role.trim())?;
 
     user::update_user(
         &app_state.connection_pool,

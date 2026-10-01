@@ -63,9 +63,12 @@ pub async fn reset_password_page(
 
 pub async fn reset_password_submit(
     State(app_state): State<AppState>,
+    session: Session,
     Form(form): Form<ResetForm>,
 ) -> Result<Response, errors::AppError> {
-    println!("resetting password...");
+    if form.new_password.trim().len() < 8 {
+        return Err(errors::DataError::BadRequest("Password must be at least 8 characters".to_string()).into());
+    }
     let record_opt = sqlx::query!(
         "SELECT user_id FROM password_reset_tokens WHERE token = $1 AND expires_at > NOW()",
         form.token
@@ -75,11 +78,19 @@ pub async fn reset_password_submit(
     .map_err(|e| errors::DataError::FailedQuery(e.to_string()))?;
 
     if let Some(record) = record_opt {
-        println!("valid user and token");
+        // A stolen session alone must not be enough to take over the account.
+        let current_hash = sqlx::query_scalar::<_, String>("SELECT password_hash FROM users WHERE id = $1")
+            .bind(record.user_id)
+            .fetch_one(&app_state.connection_pool)
+            .await
+            .map_err(|e| errors::DataError::FailedQuery(e.to_string()))?;
+        if !bcrypt::verify(form.current_password.trim(), &current_hash).map_err(errors::DataError::Bcrypt)? {
+            return Err(errors::DataError::Unauthorized("Current password is incorrect".to_string()).into());
+        }
         let hashed = bcrypt::hash(form.new_password.trim(), 10).map_err(|e| errors::DataError::Internal(e.to_string()))?; // implement your hashing function
         sqlx::query!(
             "UPDATE users SET password_hash = $1 WHERE id = $2",
-            hashed,
+            &hashed,
             record.user_id
         )
         .execute(&app_state.connection_pool)
@@ -88,6 +99,13 @@ pub async fn reset_password_submit(
         sqlx::query!("DELETE FROM password_reset_tokens WHERE token = $1", form.token)
             .execute(&app_state.connection_pool)
             .await.map_err(|e| errors::DataError::FailedQuery(e.to_string()))?;
+
+        // Changing the hash signs out every session of this user; keep the one
+        // that made the change logged in.
+        let session_user = session.get::<i32>("authenticated_user_id").await?;
+        if session_user.is_some() && session_user == record.user_id {
+            session.insert("password_stamp", hashed).await?;
+        }
 
         Ok(Redirect::to("/home").into_response())
     } else {

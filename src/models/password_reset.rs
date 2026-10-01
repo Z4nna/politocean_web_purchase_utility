@@ -8,5 +8,6 @@ pub struct ResetQuery {
 #[derive(Deserialize)]
 pub struct ResetForm {
     pub token: String,
+    pub current_password: String,
     pub new_password: String,
 }

@@ -12,11 +12,12 @@ pub fn get_router(app_state: app::AppState) -> Router {
     .route("/", get(auth::login))
     .merge(auth_routes())
     .merge(home_routes())
-    .merge(orders_routes())
+    .merge(orders_routes(app_state.clone()))
     .merge(settings_routes())
     .route("/reset-password", get(password_reset::reset_password_page))
     .route("/reset-password", post(password_reset::reset_password_submit))
-    .route("/request-pwd-reset", get(password_reset::request_password_reset))
+    .route("/request-pwd-reset", get(password_reset::request_password_reset)
+        .route_layer(middleware::from_fn(middlewares::auth::required_authentication)))
     .nest_service("/static", server_dir)
     .layer(from_fn_with_state(app_state.clone(), middlewares::auth::authenticate))
     .with_state(app_state)
@@ -124,23 +125,24 @@ fn settings_routes() -> Router<app::AppState> {
     Router::new()
         .route("/settings", get(user_settings::user_settings_handler))
         .route("/settings/set-email", post(user_settings::update_email))
+        .route_layer(middleware::from_fn(middlewares::auth::required_authentication))
 }
 
-fn orders_routes() -> Router<app::AppState> {
+fn orders_routes(app_state: app::AppState) -> Router<app::AppState> {
     Router::new()
         .route("/orders/list", get(order_operations::list_orders_handler))
         .route("/orders/new", get(new_order::new_order_handler))
         .route("/orders/new/submit", post(new_order::submit_order_handler))
         .route("/orders/new/upload-kicad-bom", post(new_order::upload_kicad_bom_handler))
-        .route("/orders/:id/coffee", get(edit_order::coffee_page_handler))
-        .route("/orders/:id/get_bom_gen_status", get(edit_order::get_generate_bom_job_status_handler))
-        .merge(edit_order_routes())
+        .merge(edit_order_routes(app_state))
         .merge(order_arithmetic_routes())
         .route_layer(middleware::from_fn(middlewares::auth::required_authentication)) // require authentication
 }
 
-fn edit_order_routes() -> Router<app::AppState> {
+fn edit_order_routes(app_state: app::AppState) -> Router<app::AppState> {
     Router::new()
+        .route("/orders/:id/coffee", get(edit_order::coffee_page_handler))
+        .route("/orders/:id/get_bom_gen_status", get(edit_order::get_generate_bom_job_status_handler))
         .route("/orders/:id/edit", get(edit_order::edit_order_handler))
         .route("/orders/:id/edit/submit", post(edit_order::submit_order_handler))
         .route("/orders/:id/edit/bulk-add", post(edit_order::bulk_add_handler))
@@ -153,6 +155,8 @@ fn edit_order_routes() -> Router<app::AppState> {
         .route("/orders/:id/confirm", post(edit_order::mark_order_confirmed_handler))
         .route("/orders/:id/unconfirm", post(edit_order::mark_order_unconfirmed_handler))
         .route("/orders/:id/delete", post(edit_order::delete_order_handler))
+        // Only the order's author or the board/prof may reach these routes.
+        .route_layer(from_fn_with_state(app_state, middlewares::auth::require_order_access))
 }
 
 fn order_arithmetic_routes() -> Router<app::AppState> {

@@ -52,6 +52,37 @@ pub async fn new_order_handler(
     Ok(Html(html_string).into_response())
 }
 
+/// A required text field of a submitted form, trimmed.
+pub fn required_field(fields: &HashMap<String, String>, name: &str) -> Result<String, errors::AppError> {
+    fields
+        .get(name)
+        .map(|s| s.trim().to_string())
+        .ok_or_else(|| DataError::BadRequest(format!("Missing field: {}", name)).into())
+}
+
+/// Reads a multipart BOM upload: its text fields and the spreadsheet in its `file` part.
+pub async fn read_bom_upload(mut multipart: Multipart) -> Result<(HashMap<String, String>, umya_spreadsheet::Spreadsheet), errors::AppError> {
+    let bad_upload = |e: axum::extract::multipart::MultipartError| DataError::BadRequest(e.to_string());
+    let mut fields: HashMap<String, String> = HashMap::new();
+    let mut file_bytes: Option<Bytes> = None;
+
+    while let Some(field) = multipart.next_field().await.map_err(bad_upload)? {
+        let name = field.name().unwrap_or_default().to_string();
+
+        if name == "file" {
+            file_bytes = Some(field.bytes().await.map_err(bad_upload)?);
+        } else {
+            // Normal text field
+            let text = field.text().await.map_err(bad_upload)?;
+            fields.insert(name, text);
+        }
+    }
+    let file_bytes = file_bytes.ok_or_else(|| DataError::BadRequest("Missing file".to_string()))?;
+    let spreadsheet = excel::load_from_bytes(&file_bytes)
+        .map_err(|_| DataError::BadRequest("The uploaded file is not a valid spreadsheet".to_string()))?;
+    Ok((fields, spreadsheet))
+}
+
 pub async fn submit_order_handler(
     State(app_state): State<AppState>,
     session: Session,
@@ -60,24 +91,18 @@ pub async fn submit_order_handler(
     let order_author_id = session
     .get::<i32>("authenticated_user_id")
     .await
-    .map_err(|e| errors::AppError::Session(e))?.unwrap();
-    let description = user_form.get("description").unwrap().trim().to_string();
-    let area_division = user_form.get("area_division").unwrap().trim().to_string();
-    let area_sub_area = user_form.get("area_sub_area").unwrap().trim().to_string();
+    .map_err(|e| errors::AppError::Session(e))?
+    .ok_or_else(|| DataError::Unauthorized("Not logged in".to_string()))?;
+    let description = required_field(&user_form, "description")?;
+    let area_division = required_field(&user_form, "area_division")?;
+    let area_sub_area = required_field(&user_form, "area_sub_area")?;
     let order_id = order::create_order(&app_state.connection_pool, order_author_id, description, area_division, area_sub_area).await?;
 
     let mut indices: HashSet<i32> = HashSet::new();
     // Collect valid indices based on existing keys
     for key in user_form.keys().map(|s| s.to_string()) {
-        let maybe_index = key.strip_prefix("items_manufacturer_pn_");
-        match maybe_index {
-            Some(index_str) => {
-                let index = index_str.parse::<i32>().unwrap();
-                indices.insert(index);
-            }
-            None => {
-                continue;
-            }
+        if let Some(Ok(index)) = key.strip_prefix("items_manufacturer_pn_").map(|i| i.parse::<i32>()) {
+            indices.insert(index);
         }
     }
     // Now process only the indices that exist
@@ -94,9 +119,7 @@ pub async fn submit_order_handler(
         let project = user_form.get(&project_key).unwrap_or(&"Varie per lab".to_string()).trim().to_string();
         let quantity = user_form
             .get(&quantity_key)
-            .unwrap()
-            .to_string()
-            .parse::<i32>()
+            .and_then(|q| q.trim().parse::<i32>().ok())
             .unwrap_or(1);
         order::add_item_to_order(
             &app_state.connection_pool,
@@ -118,31 +141,21 @@ pub async fn submit_order_handler(
 pub async fn upload_kicad_bom_handler(
     State(app_state): State<AppState>,
     session: Session,
-    mut multipart: Multipart
+    multipart: Multipart
 ) -> Result<Response, errors::AppError> {
-    let mut fields: HashMap<String, String> = HashMap::new();
-    let mut file_bytes: Option<Bytes> = None;
-
-    while let Some(field) = multipart.next_field().await.unwrap() {
-        let name = field.name().unwrap().to_string();
-
-        if name == "file" {
-            file_bytes = Some(field.bytes().await.unwrap());
-        } else {
-            // Normal text field
-            let text = field.text().await.unwrap();
-            fields.insert(name, text);
-        }
-    }
-    let spreadsheet = excel::load_from_bytes(&file_bytes.unwrap()).map_err(|e| errors::DataError::Internal(e))?;
+    let (fields, spreadsheet) = read_bom_upload(multipart).await?;
+    let author_id = session
+        .get::<i32>("authenticated_user_id")
+        .await?
+        .ok_or_else(|| DataError::Unauthorized("Not logged in".to_string()))?;
     order::create_order_from_kicad_bom(
         &app_state.connection_pool,
-        session.get::<i32>("authenticated_user_id").await.unwrap().unwrap(),
-        fields.get("description").unwrap().to_string(),
-        fields.get("area_division").unwrap().to_string(), 
-        fields.get("area_sub_area").unwrap().to_string(), 
-        fields.get("proposal").unwrap().to_string(), 
-        fields.get("project").unwrap().to_string(), 
+        author_id,
+        required_field(&fields, "description")?,
+        required_field(&fields, "area_division")?,
+        required_field(&fields, "area_sub_area")?,
+        required_field(&fields, "proposal")?,
+        required_field(&fields, "project")?,
         &spreadsheet
     ).await?;
     return Ok(Redirect::to("/home").into_response());

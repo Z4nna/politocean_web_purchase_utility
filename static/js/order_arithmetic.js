@@ -18,8 +18,9 @@ async function updateForm() {
     orders = [];
   }
 
+  const esc = s => String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
   const orderOptions = orders
-    .map(o => `<option value="${o.id}">#${o.id} - ${o.description || "Untitled"}</option>`)
+    .map(o => `<option value="${esc(o.id)}">#${esc(o.id)} - ${esc(o.description || "Untitled")}</option>`)
     .join("");
 
   if (op === "scale") {

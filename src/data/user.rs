@@ -2,6 +2,7 @@ use crate::data::errors::DataError;
 use crate::models::user_info::UserInfo;
 use sqlx::PgPool;
 use bcrypt;
+use once_cell::sync::Lazy;
 
 #[derive(Debug, Clone)]
 pub struct User {
@@ -9,29 +10,29 @@ pub struct User {
     password_hash: String,
 }
 
+/// Hash checked when the username does not exist, so that a failed login takes
+/// the same time whether or not the account exists.
+static DUMMY_HASH: Lazy<String> = Lazy::new(|| bcrypt::hash("dummy", 10).expect("bcrypt hash"));
+
 pub async fn authenticate_user(
     pool: &PgPool,
     username: &str,
     password: &str,
 ) -> Result<i32, DataError> {
-    let user: User = sqlx::query_as!(
+    let user: Option<User> = sqlx::query_as!(
         User,
         "SELECT id, password_hash FROM users WHERE username = $1",
         username
     )
-    .fetch_one(pool)
+    .fetch_optional(pool)
     .await
-    .map_err(|e| match e {
-        sqlx::Error::RowNotFound => DataError::FailedQuery("Invalid credentials".to_string()),
-        e => DataError::Query(e),
-    })?;
+    .map_err(DataError::Query)?;
 
-    let hashed_password: &str = user.password_hash.as_str();
+    let hashed_password = user.as_ref().map_or(DUMMY_HASH.as_str(), |u| u.password_hash.as_str());
     let valid_password = bcrypt::verify(password, hashed_password)?;
-    if !valid_password {
-        Err(DataError::FailedQuery("Invalid credentials".to_string()))
-    } else {
-        Ok(user.id)
+    match user {
+        Some(user) if valid_password => Ok(user.id),
+        _ => Err(DataError::Unauthorized("Invalid credentials".to_string())),
     }
 }
 
@@ -68,12 +69,10 @@ pub async fn get_sub_areas(pool: &PgPool) -> Result<Vec<String>, DataError> {
 
 /// Roles that can be assigned to a user. 'prof' is excluded because it is a
 /// unique account that must never be granted to anyone else.
-pub async fn get_assignable_roles(pool: &PgPool) -> Result<Vec<String>, DataError> {
-    let rows = sqlx::query!("SELECT DISTINCT role FROM users WHERE role != 'prof' ORDER BY role")
-        .fetch_all(pool)
-        .await
-        .map_err(DataError::Query)?;
-    Ok(rows.into_iter().map(|r| r.role).collect())
+pub fn get_assignable_roles() -> Vec<String> {
+    // Roles are plain text with no table of their own, so the list lives here
+    // (it must match the roles checked in routes.rs).
+    vec!["advisor".to_string(), "board".to_string()]
 }
 
 /// Creates a new user with a freshly hashed password.
@@ -141,17 +140,16 @@ pub async fn update_user(
 }
 
 pub async fn get_user_role(pool: &PgPool, user_id: i32) -> Result<String, DataError> {
-    let user_role_result = sqlx::query!(
-        "SELECT role FROM users WHERE id = $1",
-        user_id
-    )
-    .fetch_one(pool)
-    .await
-    .map_err(|e| DataError::Query(e));
+    get_role_and_password_hash(pool, user_id).await.map(|(role, _)| role)
+}
 
-    if let Ok(user_role) = user_role_result {
-        Ok(user_role.role)
-    } else {
-        Err(DataError::FailedQuery("User not found".to_string()))
-    }
+/// Role and current password hash of an active user. Deactivated (or deleted)
+/// users resolve to an error: they cannot log in and any session they still
+/// hold stops being authenticated.
+pub async fn get_role_and_password_hash(pool: &PgPool, user_id: i32) -> Result<(String, String), DataError> {
+    sqlx::query_as::<_, (String, String)>("SELECT role, password_hash FROM users WHERE id = $1 AND active")
+        .bind(user_id)
+        .fetch_one(pool)
+        .await
+        .map_err(|_| DataError::Unauthorized("Invalid credentials".to_string()))
 }

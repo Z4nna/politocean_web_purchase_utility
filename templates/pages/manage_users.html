@@ -9,6 +9,13 @@
 {% endblock %}
 
 {% block content %}
+<!-- Valid (division, sub_area) pairs; read from the DOM by manage_users.js.
+     HTML attribute decoding keeps names like "R&D" intact. -->
+<select id="area-pairs-data" style="display: none;">
+    {% for pair in area_pairs %}
+    <option value="{{ pair.sub_area }}" data-division="{{ pair.division }}" data-archived="{{ pair.archived }}"></option>
+    {% endfor %}
+</select>
 <div class="container">
     <h1 class="page-title">Manage Users</h1>
 
@@ -69,7 +76,7 @@
                         </td>
                         <td class="actions-cell">
                             <button type="submit" form="update-{{ user.id }}" class="button">Save</button>
-                            <form action="/board/users/{{ user.id }}/delete" method="post" class="inline-form action" onsubmit="return confirm('Delete user {{ user.username }}?');">
+                            <form action="/board/users/{{ user.id }}/delete" method="post" class="inline-form action" data-confirm="Delete user {{ user.username }}?" onsubmit="return confirm(this.dataset.confirm);">
                                 <button type="submit" class="button delete-button">Delete</button>
                             </form>
                         </td>
@@ -124,4 +131,8 @@
         <button type="submit" class="button submit-button">➕ Create user</button>
     </form>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/manage_users.js"></script>
 {% endblock %}
