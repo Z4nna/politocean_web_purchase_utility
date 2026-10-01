@@ -80,65 +80,71 @@ pub async fn digikey_search(
     // Step 2: Perform product search
     let url = format!("https://api.digikey.com/products/v4/search/keyword");
 
-    let request_body = DigiKeyRequestBody {
-        keywords: format!("{} {}", query_manufacturer, query_manufacturer_pn).into(),
-        limit: 20,
-        offset: 0,
-        filter_options_request: FilterOptionsRequest {
-            // Stock is checked below instead, so that a part that cannot be bought
-            // is still returned and we can tell why.
-            minimum_quantity_available: 0,
-            market_place_filter: "NoFilter".to_string(),
-        },
-        sort_options: SortOptions {
-            field: "None".to_string(),
-            sort_order: "Ascending".to_string(),
-        },
-    };
+    // The search is by keyword and paged, so the requested part is not guaranteed
+    // to be on the first page: keep fetching until it shows up or results run out.
+    let mut products: Vec<Product> = Vec::new();
+    let mut offset = 0;
+    loop {
+        let request_body = DigiKeyRequestBody {
+            keywords: format!("{} {}", query_manufacturer, query_manufacturer_pn).into(),
+            limit: PAGE_SIZE,
+            offset,
+            filter_options_request: FilterOptionsRequest {
+                // Stock is checked below instead, so that a part that cannot be bought
+                // is still returned and we can tell why.
+                minimum_quantity_available: 0,
+                market_place_filter: "NoFilter".to_string(),
+            },
+            sort_options: SortOptions {
+                field: "None".to_string(),
+                sort_order: "Ascending".to_string(),
+            },
+        };
 
-    let search_response = client
-        .post(&url)
-        .header("X-DIGIKEY-Client-Id", client_id)
-        .header("X-DIGIKEY-Locale-Language", "en")
-        .header("X-DIGIKEY-Locale-Currency", "EUR")
-        .header("X-DIGIKEY-Locale-Site", "IT")
-        .header("accept", "application/json")
-        .header("Content-Type", "application/json")
-        .header("Authorization", format!("Bearer {}", token))
-        .json(&request_body)
-        .timeout(Duration::from_secs(100))
-        .send()
-        .await?;
+        let search_response = client
+            .post(&url)
+            .header("X-DIGIKEY-Client-Id", &client_id)
+            .header("X-DIGIKEY-Locale-Language", "en")
+            .header("X-DIGIKEY-Locale-Currency", "EUR")
+            .header("X-DIGIKEY-Locale-Site", "IT")
+            .header("accept", "application/json")
+            .header("Content-Type", "application/json")
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&request_body)
+            .timeout(Duration::from_secs(100))
+            .send()
+            .await?;
 
-    if !search_response.status().is_success() {
-        return Err(format!("Failed to search DigiKey: code {:?}", search_response.status()).into());
+        if !search_response.status().is_success() {
+            return Err(format!("Failed to search DigiKey: code {:?}", search_response.status()).into());
+        }
+
+        let bytes = search_response.bytes().await?;
+        let mut de = serde_json::Deserializer::from_slice(&bytes);
+        let page: DigiKeySearchResult = match deserialize(&mut de) {
+            Ok(result) => result,
+            Err(e) => {
+                eprintln!("❌ Path error: {}", e);
+                return Err(format!("Error parsing JSON: {}", e).into());
+            }
+        };
+
+        let page_len = page.products.len() as u32;
+        offset += page_len;
+        products.extend(page.products);
+        // Parts Digikey itself flags as exact matches, wherever they rank.
+        products.extend(page.exact_matches);
+
+        if has_part(&products, query_manufacturer_pn)
+            || page_len == 0
+            || offset >= page.products_count
+            || offset >= MAX_RESULTS_SCANNED
+        {
+            break;
+        }
     }
 
-    let bytes = search_response.bytes().await?;
-
-    //let json: serde_json::Value = serde_json::from_slice(&bytes)?;
-
-    // Serialize the JSON with pretty formatting
-    //let pretty = serde_json::to_string_pretty(&json)?;
-
-    // Write to a file
-    //let mut file = File::create("digikey_response_pretty.json")?;
-    //file.write_all(pretty.as_bytes())?;
-
-    let myresponse: DigiKeySearchResult;
-
-    let mut de = serde_json::Deserializer::from_slice(&bytes);
-    match deserialize::<_, DigiKeySearchResult>(&mut de) {
-        Ok(result) => {
-            myresponse = result;
-        },
-        Err(e) => {
-            eprintln!("❌ Path error: {}", e);
-            return Err(format!("Error parsing JSON: {}", e).into());
-        }
-    };
-
-    let (best_product, best_variation) = match pick_variation(&myresponse.products, query_manufacturer_pn, quantity) {
+    let (best_product, best_variation) = match pick_variation(&products, query_manufacturer_pn, quantity) {
         Ok(pair) => pair,
         Err(reason) => return Ok(Err(reason)),
     };
@@ -154,6 +160,16 @@ pub async fn digikey_search(
     };
 
     Ok(Ok(product))
+}
+
+const PAGE_SIZE: u32 = 20;
+// Note: stop after 5 pages so a part Digikey does not carry costs at most 5
+// calls; a part ranked below 100 keyword results is reported as not found.
+const MAX_RESULTS_SCANNED: u32 = 100;
+
+/// Whether the requested part number (manufacturer's or Digikey's) is among `products`.
+fn has_part(products: &[Product], pn: &str) -> bool {
+    products.iter().any(|p| p.manufacturer_product_number == pn || p.product_variations.iter().any(|v| v.digi_key_product_number == pn))
 }
 
 /// Picks the cheapest packaging of the requested part that can be bought in
@@ -231,6 +247,7 @@ mod tests {
         assert_eq!(reason(&both, 10).unwrap(), "TUBE");
         assert_eq!(reason(&both, 3000).unwrap(), "REEL");
 
+        assert!(has_part(&both, "LM358P") && has_part(&both, "REEL") && !has_part(&both, "LM358"));
         assert_eq!(reason(&[], 10).unwrap_err(), "part number not found");
         assert_eq!(reason(&[product(vec![variation("REEL", 5000, 2500, 0.10)])], 10).unwrap_err(), "minimum order quantity is 2500");
         assert_eq!(reason(&[product(vec![variation("TUBE", 4, 1, 0.40)])], 10).unwrap_err(), "only 4 in stock");
