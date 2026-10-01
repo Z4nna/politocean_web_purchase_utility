@@ -125,6 +125,98 @@ form.inline-form {
     background-color: var(--danger);
 }
 
+/* Search bar on its own line, with the filter dropdowns in a single row below it. */
+.order-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.order-search {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0 1rem;
+    background: var(--bg);
+    border: 2px solid var(--border-muted);
+    border-radius: 999px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.order-search:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--highlight);
+}
+
+.order-search svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex-shrink: 0;
+    fill: none;
+    stroke: var(--text-muted);
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+.order-search input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.65rem 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 1rem;
+}
+
+.order-search input::placeholder {
+    color: var(--text-muted);
+}
+
+.order-filter-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 1rem;
+}
+
+.order-filter-row label {
+    display: flex;
+    margin: 0;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.order-filter-row select {
+    min-width: 0;
+    margin: 0;
+    padding: 6px 10px;
+    border: 1px solid var(--border-muted);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.order-filter-row select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+#order-count {
+    margin-left: auto;
+    white-space: nowrap;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
 .order-actions {
     text-align: center;
     margin-top: 2rem;

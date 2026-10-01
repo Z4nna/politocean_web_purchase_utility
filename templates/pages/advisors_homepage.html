@@ -5,11 +5,14 @@
 {% block head %}
 <link rel="stylesheet" href="/static/css/palette.css" />
 <link rel="stylesheet" href="/static/css/advisors_homepage.css" />
+<script src="/static/js/order_filters.js"></script>
 {% endblock %}
 
 {% block content %}
 <div class="container">
     <h1 class="page-title">Orders List</h1>
+
+    {% include "order_filters.html" %}
 
     <div class="table-wrapper">
         <table class="orders-table">
@@ -17,6 +20,7 @@
                 <tr>
                     <th>ID</th>
                     <th>Description</th>
+                    <th>Area</th>
                     <th>Date</th>
                     <th>State</th>
                     <th>Actions</th>
@@ -24,9 +28,10 @@
             </thead>
             <tbody>
                 {% for order in orders %}
-                <tr>
+                <tr data-status="{{ order.get_status() }}" data-area="{{ order.area_division }} / {{ order.area_sub_area }}" data-author="{{ order.author }}">
                     <td>{{ order.id }}</td>
                     <td>{{ order.description }}</td>
+                    <td>{{ order.area_division }} / {{ order.area_sub_area }}</td>
                     <td>{{ order.get_date() }}</td>
                     <td class="status-cell" style="background-color: {{ order.get_bg_color() }};">
                         {{ order.get_status() }}

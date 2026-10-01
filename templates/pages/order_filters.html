@@ -1,0 +1,14 @@
+{# Search box and filters for an orders table; wired up by /static/js/order_filters.js.
+   Rows carry data-status / data-area / data-author, which fill the dropdowns. #}
+<div class="order-filters">
+    <div class="order-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+        <input type="search" id="order-search" placeholder="Search orders..." aria-label="Search orders">
+    </div>
+    <div class="order-filter-row">
+        <label>Status <select class="order-filter" data-key="status"><option value="">All</option></select></label>
+        <label>Area <select class="order-filter" data-key="area"><option value="">All</option></select></label>
+        <label>Author <select class="order-filter" data-key="author"><option value="">All</option></select></label>
+        <span id="order-count"></span>
+    </div>
+</div>
