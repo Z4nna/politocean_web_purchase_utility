@@ -96,39 +96,19 @@ pub async fn submit_order_handler(
     let description = required_field(&user_form, "description")?;
     let area_division = required_field(&user_form, "area_division")?;
     let area_sub_area = required_field(&user_form, "area_sub_area")?;
+    // Validate the items before creating anything, so a bad row leaves no empty order behind.
+    let items = crate::handlers::edit_order::parse_order_items(&user_form)?;
     let order_id = order::create_order(&app_state.connection_pool, order_author_id, description, area_division, area_sub_area).await?;
 
-    let mut indices: HashSet<i32> = HashSet::new();
-    // Collect valid indices based on existing keys
-    for key in user_form.keys().map(|s| s.to_string()) {
-        if let Some(Ok(index)) = key.strip_prefix("items_manufacturer_pn_").map(|i| i.parse::<i32>()) {
-            indices.insert(index);
-        }
-    }
-    // Now process only the indices that exist
-    for index in indices {
-        let man_key = format!("items_manufacturer_{}", index);
-        let pn_key = format!("items_manufacturer_pn_{}", index);
-        let quantity_key = format!("items_quantity_{}", index);
-        let proposal_key = format!("items_proposal_{}", index);
-        let project_key = format!("items_project_{}", index);
-
-        let manifacturer = user_form.get(&man_key).unwrap_or(&"".to_string()).trim().to_string();
-        let manifacturer_pn = user_form.get(&pn_key).unwrap_or(&"".to_string()).trim().to_string();
-        let proposal = user_form.get(&proposal_key).unwrap_or(&"Elettronica generale".to_string()).trim().to_string();
-        let project = user_form.get(&project_key).unwrap_or(&"Varie per lab".to_string()).trim().to_string();
-        let quantity = user_form
-            .get(&quantity_key)
-            .and_then(|q| q.trim().parse::<i32>().ok())
-            .unwrap_or(1);
+    for item in items {
         order::add_item_to_order(
             &app_state.connection_pool,
             order_id,
-            manifacturer,
-            manifacturer_pn,
-            quantity,
-            proposal,
-            project,
+            item.manufacturer,
+            item.manufacturer_pn,
+            item.quantity,
+            item.proposal,
+            item.project,
             None,
             None
         )

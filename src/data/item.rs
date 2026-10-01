@@ -14,24 +14,29 @@ pub async fn get_items_from_order(order_id: i32, pool: &PgPool) -> Result<Vec<Or
     Ok(user_orders)
 }
 
-pub async fn set_item_pn(
-    pool: &PgPool, 
-    order_id: i32, 
-    manufacturer: String, 
-    manufacturer_pn: String,
+/// Stores the result of a BOM generation on an order item: the chosen supplier's
+/// part number and unit price, or a note saying why the item could not be sourced.
+pub async fn set_bom_result(
+    pool: &PgPool,
+    item: &OrderItem,
     mouser_pn: Option<String>,
-    digikey_pn: Option<String>
+    digikey_pn: Option<String>,
+    unit_price: Option<f64>,
+    bom_note: Option<String>,
 ) -> Result<(), DataError> {
-    
     sqlx::query!(
-        "UPDATE order_items 
-         SET mouser_pn = $1, digikey_pn = $2 
-         WHERE order_id = $3 AND manufacturer = $4 AND manufacturer_pn = $5",
+        "UPDATE order_items
+         SET mouser_pn = $1, digikey_pn = $2, unit_price = $3, bom_note = $4
+         WHERE order_id = $5 AND manufacturer = $6 AND manufacturer_pn = $7 AND proposal = $8 AND project = $9",
         mouser_pn,
         digikey_pn,
-        order_id,
-        manufacturer,
-        manufacturer_pn
+        unit_price,
+        bom_note,
+        item.order_id,
+        item.manufacturer,
+        item.manufacturer_pn,
+        item.proposal,
+        item.project
     )
     .execute(pool)
     .await

@@ -70,7 +70,7 @@ pub async fn digikey_search(
     query_manufacturer: &str, 
     query_manufacturer_pn: &str, 
     quantity: u32
-) -> Result<Option<DigiKeyPart>, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<Result<DigiKeyPart, String>, Box<dyn std::error::Error + Send + Sync>> {
     dotenv().ok();
     let client_id = std::env::var("DIGIKEY_CLIENT_ID").expect("DIGIKEY_CLIENT_ID not set");
     println!("Searching for {} {} on Digikey", query_manufacturer, query_manufacturer_pn);
@@ -85,7 +85,9 @@ pub async fn digikey_search(
         limit: 20,
         offset: 0,
         filter_options_request: FilterOptionsRequest {
-            minimum_quantity_available: quantity,
+            // Stock is checked below instead, so that a part that cannot be bought
+            // is still returned and we can tell why.
+            minimum_quantity_available: 0,
             market_place_filter: "NoFilter".to_string(),
         },
         sort_options: SortOptions {
@@ -136,38 +138,10 @@ pub async fn digikey_search(
         }
     };
 
-    let possible_products: Vec<Product> = myresponse.products;
-
-    if possible_products.is_empty() {
-        return Ok(None);
-    }
-
-    let mut valid_variations: Vec<(&Product, &ProductVariation)> = Vec::new();
-    for product in &possible_products {
-        for variation in &product.product_variations {
-            if variation.quantity_availablefor_package_type >= quantity
-                && variation.minimum_order_quantity <= quantity
-                && (&product.manufacturer_product_number == query_manufacturer_pn || query_manufacturer_pn == variation.digi_key_product_number)
-            {
-                valid_variations.push((product, variation));
-            }
-        }
-    }
-
-    if valid_variations.is_empty() {
-        return Ok(None);
-    }
-
-    let best_pair = valid_variations
-        .into_iter()
-        .min_by(|(_, v1), (_, v2)| {
-            let p1 = v1.get_price(quantity).unwrap_or(f64::INFINITY);
-            let p2 = v2.get_price(quantity).unwrap_or(f64::INFINITY);
-            p1.partial_cmp(&p2).unwrap_or(std::cmp::Ordering::Equal)
-        })
-        .unwrap();
-
-    let (best_product, best_variation) = best_pair;
+    let (best_product, best_variation) = match pick_variation(&myresponse.products, query_manufacturer_pn, quantity) {
+        Ok(pair) => pair,
+        Err(reason) => return Ok(Err(reason)),
+    };
 
     let product = DigiKeyPart {
         manufacturer: best_product.manufacturer.name.clone(),
@@ -179,5 +153,92 @@ pub async fn digikey_search(
         availability: best_product.quantity_available,
     };
 
-    Ok(Some(product))
+    Ok(Ok(product))
+}
+
+/// Picks the cheapest packaging of the requested part that can be bought in
+/// `quantity` pieces right now, or a short reason why none can.
+fn pick_variation<'a>(products: &'a [Product], pn: &str, quantity: u32) -> Result<(&'a Product, &'a ProductVariation), String> {
+    let price = |v: &ProductVariation| v.get_price(quantity).unwrap_or(0.0);
+    let candidates: Vec<(&Product, &ProductVariation)> = products
+        .iter()
+        .flat_map(|p| p.product_variations.iter().map(move |v| (p, v)))
+        .filter(|(p, v)| p.manufacturer_product_number == pn || v.digi_key_product_number == pn)
+        .collect();
+    let Some((product, _)) = candidates.first() else {
+        return Err("part number not found".to_string());
+    };
+
+    let best = candidates
+        .iter()
+        .filter(|(_, v)| v.quantity_availablefor_package_type >= quantity && v.minimum_order_quantity <= quantity && price(v) > 0.0)
+        .min_by(|(_, v1), (_, v2)| price(v1).partial_cmp(&price(v2)).unwrap_or(std::cmp::Ordering::Equal));
+    if let Some(best) = best {
+        return Ok(*best);
+    }
+
+    let status = product.product_status.as_ref().map(|s| s.status.as_str()).filter(|s| !s.is_empty() && *s != "Active");
+    let in_stock: Vec<&ProductVariation> = candidates.iter().map(|(_, v)| *v).filter(|v| v.quantity_availablefor_package_type >= quantity).collect();
+    if in_stock.is_empty() {
+        let max_stock = candidates.iter().map(|(_, v)| v.quantity_availablefor_package_type).max().unwrap_or(0);
+        return Err(match (product.discontinued || product.end_of_life, status, max_stock) {
+            (true, status, _) => status.unwrap_or("discontinued").to_lowercase(),
+            (_, Some(status), 0) => format!("not in stock ({})", status),
+            (_, None, 0) => "not in stock".to_string(),
+            (_, _, n) => format!("only {} in stock", n),
+        });
+    }
+    match in_stock.iter().map(|v| v.minimum_order_quantity).min() {
+        Some(min) if min > quantity => Err(format!("minimum order quantity is {}", min)),
+        _ => Err("no price available".to_string()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::digikey_api_models::{Manufacturer, PriceBreak, ProductDescription, ProductStatus};
+
+    fn variation(dk_pn: &str, stock: u32, moq: u32, unit_price: f64) -> ProductVariation {
+        ProductVariation {
+            digi_key_product_number: dk_pn.to_string(),
+            standard_pricing: Some(vec![PriceBreak { break_quantity: moq, unit_price, total_price: unit_price * moq as f64 }]),
+            quantity_availablefor_package_type: stock,
+            minimum_order_quantity: moq,
+        }
+    }
+
+    fn product(variations: Vec<ProductVariation>) -> Product {
+        Product {
+            description: ProductDescription { product_description: String::new(), detailed_description: String::new() },
+            manufacturer: Manufacturer { id: 1, name: "Texas Instruments".to_string() },
+            manufacturer_product_number: "LM358P".to_string(),
+            product_url: String::new(),
+            datasheet_url: None,
+            quantity_available: variations.iter().map(|v| v.quantity_availablefor_package_type).sum(),
+            product_variations: variations,
+            product_status: None,
+            discontinued: false,
+            end_of_life: false,
+        }
+    }
+
+    #[test]
+    fn picks_cheapest_buyable_variation_or_explains() {
+        let reason = |products: &[Product], qty| pick_variation(products, "LM358P", qty).map(|(_, v)| v.digi_key_product_number.clone());
+
+        let both = [product(vec![variation("TUBE", 500, 1, 0.40), variation("REEL", 5000, 2500, 0.10)])];
+        assert_eq!(reason(&both, 10).unwrap(), "TUBE");
+        assert_eq!(reason(&both, 3000).unwrap(), "REEL");
+
+        assert_eq!(reason(&[], 10).unwrap_err(), "part number not found");
+        assert_eq!(reason(&[product(vec![variation("REEL", 5000, 2500, 0.10)])], 10).unwrap_err(), "minimum order quantity is 2500");
+        assert_eq!(reason(&[product(vec![variation("TUBE", 4, 1, 0.40)])], 10).unwrap_err(), "only 4 in stock");
+        assert_eq!(reason(&[product(vec![variation("TUBE", 0, 1, 0.40)])], 10).unwrap_err(), "not in stock");
+
+        let mut obsolete = product(vec![variation("TUBE", 0, 1, 0.40)]);
+        obsolete.discontinued = true;
+        obsolete.product_status = Some(ProductStatus { status: "Obsolete".to_string() });
+        assert_eq!(reason(&[obsolete], 10).unwrap_err(), "obsolete");
+    }
 }

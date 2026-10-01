@@ -33,8 +33,11 @@ pub struct FilterOptionsRequest {
 
 }
 
-#[derive(Deserialize, Debug, Serialize)]
+#[derive(Deserialize, Debug, Serialize, Default)]
 #[serde(rename_all = "PascalCase")]
+// A search with no results omits these fields: default them so it parses as
+// "nothing found" rather than failing.
+#[serde(default)]
 pub struct DigiKeySearchResult {
     pub products: Vec<Product>,
     pub products_count: u32,
@@ -49,8 +52,24 @@ pub struct Product {
     pub manufacturer_product_number: String,
     pub product_url: String,
     pub datasheet_url: Option<String>,
+    // Omitted when the part is not in stock.
+    #[serde(default)]
     pub quantity_available: u32,
     pub product_variations: Vec<ProductVariation>,
+    // Lifecycle information, only used to explain why a part cannot be bought.
+    #[serde(default)]
+    pub product_status: Option<ProductStatus>,
+    #[serde(default)]
+    pub discontinued: bool,
+    #[serde(default)]
+    pub end_of_life: bool,
+}
+
+#[derive(Deserialize, Debug, Serialize, Clone)]
+#[serde(rename_all = "PascalCase")]
+pub struct ProductStatus {
+    #[serde(default)]
+    pub status: String,
 }
 
 #[derive(Deserialize, Debug, Serialize, Clone)]
@@ -72,7 +91,11 @@ pub struct Manufacturer {
 pub struct ProductVariation {
     pub digi_key_product_number: String,
     pub standard_pricing: Option<Vec<PriceBreak>>,
+    // Omitted when the part is not in stock.
+    #[serde(default)]
     pub quantity_availablefor_package_type: u32,
+    // Not present on every variation; a missing value means no minimum.
+    #[serde(default)]
     pub minimum_order_quantity: u32,
 }
 

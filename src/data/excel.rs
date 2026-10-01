@@ -1,6 +1,9 @@
 use umya_spreadsheet::{writer, reader, Spreadsheet};
 use std::io::Cursor;
 
+/// Italian VAT (22%), applied to every price.
+pub const VAT_MULTIPLIER: f64 = 1.22;
+
 #[derive(Debug, Clone)]
 pub struct KiCadItem {
     pub quantity: i32,
@@ -57,7 +60,7 @@ pub fn add_item_to_bom(
             order_sheet.get_cell_mut((4, row_index)).set_value(quantity.to_string());
             order_sheet.get_cell_mut((5, row_index)).set_value(unit_price.to_string());
             order_sheet.get_cell_mut((6, row_index)).set_formula(&format!("=D{}*E{}", row_index, row_index));
-            order_sheet.get_cell_mut((7, row_index)).set_formula(&format!("=F{}*1.22", row_index));
+            order_sheet.get_cell_mut((7, row_index)).set_formula(&format!("=F{}*{}", row_index, VAT_MULTIPLIER));
             order_sheet.get_cell_mut((8, row_index)).set_value(proposal);
             order_sheet.get_cell_mut((9, row_index)).set_value(link);
             order_sheet.get_cell_mut((10, row_index)).set_value(project);

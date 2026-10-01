@@ -41,6 +41,9 @@
             <form action="/orders/{{ order.id }}/edit/generate-bom" method="post" class="inline-form">
                 <button type="submit" onclick="showLoadingContainer()">📄 Generate BOM</button>
             </form>
+            <form action="/orders/{{ order.id }}/bom" method="get" class="inline-form">
+                <button type="submit">📋 View BOM</button>
+            </form>
             <form action="/orders/{{ order.id }}/edit/download-bom" method="post" class="inline-form">
                 <button type="submit">⬇️ Download BOM</button>
             </form>

@@ -43,6 +43,29 @@ pub struct EditOrderTemplate {
     pub is_board: bool,
 }
 
+/// One line of the "View BOM" page, already formatted for display.
+pub struct BomRow {
+    pub manufacturer: String,
+    pub manufacturer_pn: String,
+    pub quantity: i32,
+    /// "Mouser" / "Digikey", or empty when the item has no supplier.
+    pub provider: &'static str,
+    pub supplier_pn: String,
+    pub unit_price_vat: String,
+    pub total_vat: String,
+    /// Why the item has no supplier (only when `provider` is empty).
+    pub note: String,
+}
+
+#[derive(Template)]
+#[template(path = "pages/view_bom.html")]
+pub struct ViewBomTemplate {
+    pub order: Order,
+    pub rows: Vec<BomRow>,
+    pub total_vat: String,
+    pub is_board: bool,
+}
+
 #[derive(Template)]
 #[template(path = "pages/board_home.html")]
 pub struct BoardHomeTemplate {

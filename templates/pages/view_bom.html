@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}BOM #{{ order.id }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/advisors_homepage.css" />
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="page-title">BOM for order #{{ order.id }}: {{ order.description }}</h1>
+    <p>
+        Result of the last BOM generation. Prices include VAT.
+        Re-generate the BOM after editing the order, as changed items lose their result.
+    </p>
+
+    <div class="table-wrapper">
+        <table class="orders-table">
+            <thead>
+                <tr>
+                    <th>Manufacturer</th>
+                    <th>P.N.</th>
+                    <th>Quantity</th>
+                    <th>Provider</th>
+                    <th>Provider P.N.</th>
+                    <th>Unit price (€, incl. VAT)</th>
+                    <th>Total (€, incl. VAT)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td>{{ row.manufacturer }}</td>
+                    <td>{{ row.manufacturer_pn }}</td>
+                    <td>{{ row.quantity }}</td>
+                    {% if row.provider.is_empty() %}
+                    <td colspan="4">❌ {{ row.note }}</td>
+                    {% else %}
+                    <td>{{ row.provider }}</td>
+                    <td>{{ row.supplier_pn }}</td>
+                    <td>{{ row.unit_price_vat }}</td>
+                    <td>{{ row.total_vat }}</td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="6">Total</th>
+                    <th>{{ total_vat }}</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <hr>
+
+    <div class="order-actions">
+        <a href="/orders/{{ order.id }}/edit" class="button">Back to order</a>
+    </div>
+</div>
+{% endblock %}

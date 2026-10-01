@@ -2,7 +2,7 @@ use crate::data::{item, errors::DataError};
 use crate::models::digikey_api_models::DigiKeyPart;
 use crate::models::item::OrderItem;
 use crate::models::mouser_api_models::MouserPart;
-use futures::stream::{FuturesUnordered, StreamExt};
+use futures::stream::{self, StreamExt};
 use sqlx::{PgPool, types::time::Date};
 use time::format_description;
 use umya_spreadsheet::{Spreadsheet};
@@ -12,12 +12,44 @@ use crate::data::excel;
 
 use super::digikey_apis;
 
+/// Outcome of the two supplier lookups for one item: for each supplier, the part
+/// that can be bought, or a short reason why it cannot.
 #[derive(Debug, Clone)]
 struct ItemProcessingResult {
     item: OrderItem,
-    mouser_part: Option<MouserPart>,
-    digikey_part: Option<DigiKeyPart>
+    mouser_part: Result<MouserPart, String>,
+    digikey_part: Result<DigiKeyPart, String>,
 }
+
+#[derive(Debug)]
+enum SupplierChoice {
+    Mouser(MouserPart),
+    Digikey(DigiKeyPart),
+    /// Neither supplier can deliver the item; carries the reason given by each.
+    Unresolved(String),
+}
+
+/// Picks the supplier for an item. The lookups only return a part that is in stock
+/// and has a price for the requested quantity, so when both have it the cheaper
+/// one wins (Digikey on a tie).
+fn choose_supplier(mouser_part: Result<MouserPart, String>, digikey_part: Result<DigiKeyPart, String>) -> SupplierChoice {
+    match (mouser_part, digikey_part) {
+        (Ok(m), Ok(d)) => {
+            if m.unit_price < d.unit_price {
+                SupplierChoice::Mouser(m)
+            } else {
+                SupplierChoice::Digikey(d)
+            }
+        }
+        (Ok(m), Err(_)) => SupplierChoice::Mouser(m),
+        (Err(_), Ok(d)) => SupplierChoice::Digikey(d),
+        (Err(m), Err(d)) => SupplierChoice::Unresolved(format!("Mouser: {}; Digikey: {}", m, d)),
+    }
+}
+
+// Note: one fixed cap on concurrent item lookups to stay under the suppliers'
+// rate limits; switch to a per-supplier limiter if one of them needs its own rate.
+const MAX_CONCURRENT_LOOKUPS: usize = 4;
 
 #[derive(sqlx::FromRow, Debug, Clone)]
 pub struct Order {
@@ -153,19 +185,10 @@ pub async fn create_order(
     area_division: String,
     area_sub_area: String,
 ) -> Result<i32, DataError> {
-    sqlx::query!(
-        "INSERT INTO orders (author_id, description, area_division, area_sub_area) VALUES ($1, $2, $3, $4)",
-        author_id,
-        description,
-        area_division,
-        area_sub_area
-    )
-    .execute(pool)
-    .await
-    .map_err(|e| DataError::Query(e))?;
-
-    let order_id: i32 = sqlx::query!(
-        "SELECT id FROM orders WHERE author_id = $1 AND date = CURRENT_DATE AND description = $2 AND area_division = $3 AND area_sub_area = $4",
+    // RETURNING gives the id of the row just inserted. Looking it up afterwards by
+    // its fields would return another order with the same description and date.
+    let order_id: i32 = sqlx::query_scalar!(
+        "INSERT INTO orders (author_id, description, area_division, area_sub_area) VALUES ($1, $2, $3, $4) RETURNING id",
         author_id,
         description,
         area_division,
@@ -173,9 +196,47 @@ pub async fn create_order(
     )
     .fetch_one(pool)
     .await
-    .map_err(|e| DataError::Query(e))?
-    .id;
+    .map_err(|e| DataError::Query(e))?;
     Ok(order_id)
+}
+
+/// A confirmed order has been approved and sent to the professor: the board must
+/// unconfirm it before it can be changed again.
+pub async fn ensure_not_confirmed(pool: &PgPool, order_id: i32) -> Result<(), DataError> {
+    let confirmed = sqlx::query_scalar!("SELECT confirmed FROM orders WHERE id = $1", order_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(DataError::Query)?;
+    match confirmed {
+        Some(false) => Ok(()),
+        Some(true) => Err(DataError::BadRequest("This order is confirmed and can no longer be modified.".to_string())),
+        None => Err(DataError::BadRequest("Order not found.".to_string())),
+    }
+}
+
+/// Moves every item of `source_id` into `target_id` (summing the quantities of
+/// items present in both) and deletes the source order. Runs in one transaction,
+/// so the source is only deleted if all of its items were moved.
+pub async fn merge_orders(pool: &PgPool, source_id: i32, target_id: i32) -> Result<(), DataError> {
+    let mut tx = pool.begin().await.map_err(DataError::Query)?;
+    sqlx::query!(
+        "INSERT INTO order_items (order_id, manufacturer, manufacturer_pn, quantity, proposal, project, mouser_pn, digikey_pn, unit_price, bom_note)
+         SELECT $2, manufacturer, manufacturer_pn, quantity, proposal, project, mouser_pn, digikey_pn, unit_price, bom_note
+         FROM order_items WHERE order_id = $1
+         ON CONFLICT (order_id, manufacturer, manufacturer_pn, proposal, project)
+         DO UPDATE SET quantity = order_items.quantity + EXCLUDED.quantity",
+        source_id,
+        target_id
+    )
+    .execute(&mut *tx)
+    .await
+    .map_err(DataError::Query)?;
+    sqlx::query!("DELETE FROM orders WHERE id = $1", source_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(DataError::Query)?;
+    tx.commit().await.map_err(DataError::Query)?;
+    Ok(())
 }
 
 pub async fn delete_order(pool: &PgPool, order_id: i32) -> Result<(), DataError> {
@@ -236,7 +297,7 @@ pub async fn update_order_and_items(
         sqlx::query!(
             "INSERT INTO order_items (order_id, manufacturer, manufacturer_pn, quantity, proposal, project)
              VALUES ($1, $2, $3, $4, $5, $6)
-             ON CONFLICT (order_id, manufacturer, manufacturer_pn)
+             ON CONFLICT (order_id, manufacturer, manufacturer_pn, proposal, project)
              DO UPDATE SET quantity = order_items.quantity + EXCLUDED.quantity",
             order_id,
             item.manufacturer,
@@ -268,7 +329,7 @@ pub async fn add_item_to_order(
     sqlx::query!(
         "INSERT INTO order_items (order_id, manufacturer, manufacturer_pn, quantity, proposal, project, mouser_pn, digikey_pn) 
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        ON CONFLICT (order_id, manufacturer, manufacturer_pn)
+        ON CONFLICT (order_id, manufacturer, manufacturer_pn, proposal, project)
         DO UPDATE SET quantity = order_items.quantity + EXCLUDED.quantity",
         order_id,
         manufacturer,
@@ -285,28 +346,31 @@ pub async fn add_item_to_order(
     Ok(())
 }
 
-pub async fn add_to_bom_and_db(
+/// Adds a row to a BOM sheet and stores the result on the order item. The item is
+/// looked up by the manufacturer / part number the user typed (`item`), while the
+/// sheet shows the names as the supplier spells them. With no supplier part number
+/// the item is unresolved and `description` is the reason, kept as its note.
+async fn add_to_bom_and_db(
     pool: &PgPool,
-    order_id: i32,
+    item: &OrderItem,
     manufacturer: String,
     manufacturer_pn: String,
     quantity: i32,
     description: String,
     unit_price: f64,
-    proposal: String,
     product_url: String,
-    project: String,
     mouser_pn: Option<String>,
     digikey_pn: Option<String>,
     book: &mut Spreadsheet,
 ) -> Result<(), DataError>{
-    item::set_item_pn(
+    let resolved = mouser_pn.is_some() || digikey_pn.is_some();
+    item::set_bom_result(
         pool,
-        order_id,
-        manufacturer.clone(),
-        manufacturer_pn.clone(), 
+        item,
         mouser_pn,
         digikey_pn,
+        resolved.then_some(unit_price),
+        (!resolved).then(|| description.clone()),
     ).await?;
     excel::add_item_to_bom(
         book,
@@ -315,9 +379,9 @@ pub async fn add_to_bom_and_db(
         quantity,
         description,
         unit_price,
-        proposal,
+        item.proposal.clone(),
         product_url,
-        project,
+        item.project.clone(),
         "".to_string()).map_err(|e| DataError::FailedQuery(e.to_string()))?;
     Ok(())
 }
@@ -332,150 +396,83 @@ pub async fn generate_bom(pool: &PgPool, order_id: i32) -> Result<(), DataError>
     let mut mouser_book = excel::create_bom_file();
     let mut digikey_book = excel::create_bom_file();
 
-    let mut tasks = FuturesUnordered::new();
-
-    for item in order_items {
-        let item = item.clone();
-        tasks.push(async move {
+    let results: Vec<ItemProcessingResult> = stream::iter(order_items)
+        .map(|item| async move {
             let (mouser_part_res, digikey_part_res) = tokio::join!(
                 mouser_apis::search_mouser(
                 &item.manufacturer,
                 &item.manufacturer_pn,
                 item.quantity as u32),
-                digikey_apis::digikey_search(&item.manufacturer, 
-                &item.manufacturer_pn, 
+                digikey_apis::digikey_search(&item.manufacturer,
+                &item.manufacturer_pn,
                 item.quantity as u32)
             );
-            let mouser_part_opt = mouser_part_res
-                .unwrap_or(None);
-            let digikey_part_opt = digikey_part_res
-                .unwrap_or(None);
-            ItemProcessingResult { item: item, mouser_part: mouser_part_opt, digikey_part: digikey_part_opt }
-        });
-    }
-
-    let mut results: Vec<ItemProcessingResult> = Vec::new();
-    while let Some(result) = tasks.next().await {
-        results.push(result);
-    }
+            // A failed lookup (API error) is not "not found": say so, details go to the log.
+            let mouser_part = mouser_part_res.unwrap_or_else(|e| {
+                eprintln!("Mouser lookup failed for {} {}: {}", item.manufacturer, item.manufacturer_pn, e);
+                Err("lookup failed, regenerate the BOM".to_string())
+            });
+            let digikey_part = digikey_part_res.unwrap_or_else(|e| {
+                eprintln!("Digikey lookup failed for {} {}: {}", item.manufacturer, item.manufacturer_pn, e);
+                Err("lookup failed, regenerate the BOM".to_string())
+            });
+            ItemProcessingResult { item, mouser_part, digikey_part }
+        })
+        .buffer_unordered(MAX_CONCURRENT_LOOKUPS)
+        .collect()
+        .await;
 
     for result in results {
-        match (result.mouser_part, result.digikey_part) {
-            (Some(mouser_part), Some(digikey_part)) => {
-                println!("man: {} - id: {} - mouser_price: {} - digikey_price: {}", 
-                    result.item.manufacturer,
-                    result.item.manufacturer_pn, 
-                    mouser_part.unit_price, 
-                    digikey_part.unit_price);
-                if (mouser_part.availability >= result.item.quantity as u32)
-                && mouser_part.unit_price > 0.0
-                && (mouser_part.unit_price < digikey_part.unit_price || digikey_part.unit_price == 0.0)  {
-                    // adding to mouser book, set mouser_pn in db
-                    add_to_bom_and_db(
-                        pool,
-                        order_id,
-                        mouser_part.manufacturer.clone(),
-                        mouser_part.manufacturer_pn.clone(), 
-                        result.item.quantity,
-                        mouser_part.description,
-                        mouser_part.unit_price,
-                        result.item.proposal,
-                        mouser_part.product_url,
-                        result.item.project,
-                        Some(mouser_part.mouser_pn.clone()), 
-                        None, 
-                        &mut mouser_book
-                    ).await?;
-                } else if digikey_part.availability >= result.item.quantity as u32 
-                && digikey_part.unit_price > 0.0 {
-                    // adding to digikey book, set digikey_pn in db
-                    add_to_bom_and_db(
-                        pool,
-                        order_id,
-                        digikey_part.manufacturer.clone(),
-                        digikey_part.manufacturer_pn.clone(), 
-                        result.item.quantity,
-                        digikey_part.description,
-                        digikey_part.unit_price,
-                        result.item.proposal,
-                        digikey_part.product_url,
-                        result.item.project,
-                        None, 
-                        Some(digikey_part.digikey_pn.clone()), 
-                        &mut digikey_book
-                    ).await?;
-                } else {
-                    println!("Item not available on mouser nor digikey");
-                    add_to_bom_and_db(
-                        pool,
-                        order_id,
-                        result.item.manufacturer.clone(),
-                        result.item.manufacturer_pn.clone(), 
-                        0,
-                        "".to_string(),
-                        0.0,
-                        result.item.proposal,
-                        "".to_string(),
-                        result.item.project,
-                        None, 
-                        None, 
-                        &mut mouser_book
-                    ).await?;
-                }
-            },
-            (None, Some(digikey_part)) => { // only available on digikey
-                println!("manufacturer: {} - pn: {} - digikey_price: {}", result.item.manufacturer, result.item.manufacturer_pn, digikey_part.unit_price);
+        let item = result.item;
+        match choose_supplier(result.mouser_part, result.digikey_part) {
+            SupplierChoice::Mouser(part) => {
+                println!("man: {} - id: {} - mouser_price: {}", item.manufacturer, item.manufacturer_pn, part.unit_price);
                 add_to_bom_and_db(
                     pool,
-                    order_id,
-                    digikey_part.manufacturer.clone(),
-                    digikey_part.manufacturer_pn.clone(), 
-                    result.item.quantity,
-                    digikey_part.description,
-                    digikey_part.unit_price,
-                    result.item.proposal,
-                    digikey_part.product_url,
-                    result.item.project,
-                    None, 
-                    Some(digikey_part.digikey_pn.clone()), 
+                    &item,
+                    part.manufacturer,
+                    part.manufacturer_pn,
+                    item.quantity,
+                    part.description,
+                    part.unit_price,
+                    part.product_url,
+                    Some(part.mouser_pn),
+                    None,
+                    &mut mouser_book
+                ).await?;
+            }
+            SupplierChoice::Digikey(part) => {
+                println!("man: {} - id: {} - digikey_price: {}", item.manufacturer, item.manufacturer_pn, part.unit_price);
+                add_to_bom_and_db(
+                    pool,
+                    &item,
+                    part.manufacturer,
+                    part.manufacturer_pn,
+                    item.quantity,
+                    part.description,
+                    part.unit_price,
+                    part.product_url,
+                    None,
+                    Some(part.digikey_pn),
                     &mut digikey_book
                 ).await?;
             }
-            (Some(mouser_part), None) => { // only available on mouser
-                println!("man: {} - id: {} - mouser_price: {}", result.item.manufacturer, result.item.manufacturer_pn, mouser_part.unit_price);
+            SupplierChoice::Unresolved(reason) => {
+                println!("man: {} - id: {} - {}", item.manufacturer, item.manufacturer_pn, reason);
+                // Listed with quantity 0 on the Mouser sheet, with the reason as description.
                 add_to_bom_and_db(
-                        pool,
-                        order_id,
-                        mouser_part.manufacturer.clone(),
-                        mouser_part.manufacturer_pn.clone(), 
-                        result.item.quantity,
-                        mouser_part.description,
-                        mouser_part.unit_price,
-                        result.item.proposal,
-                        mouser_part.product_url,
-                        result.item.project,
-                        Some(mouser_part.mouser_pn.clone()), 
-                        None, 
-                        &mut mouser_book
-                    ).await?;
-            }
-            (None, None) => { // part not found
-                println!("man: {} - id: {} - not found", result.item.manufacturer, result.item.manufacturer_pn);
-                add_to_bom_and_db (
-                        pool,
-                        order_id,
-                        result.item.manufacturer.clone(),
-                        result.item.manufacturer_pn.clone(), 
-                        0,
-                        "".to_string(),
-                        0.0,
-                        result.item.proposal,
-                        "".to_string(),
-                        result.item.project,
-                        None, 
-                        None, 
-                        &mut mouser_book
-                    ).await?;
+                    pool,
+                    &item,
+                    item.manufacturer.clone(),
+                    item.manufacturer_pn.clone(),
+                    0,
+                    reason,
+                    0.0,
+                    "".to_string(),
+                    None,
+                    None,
+                    &mut mouser_book
+                ).await?;
             }
         }
     }
@@ -536,4 +533,46 @@ pub async fn bulk_add_from_bom(
         add_item_to_order(pool, order_id, item.manifacturer, item.manifacturer_pn, item.quantity, proposal.clone(), project.clone(), None, None).await?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn mouser(unit_price: f64, availability: u32) -> MouserPart {
+        MouserPart {
+            manufacturer: "TI".to_string(),
+            manufacturer_pn: "PN".to_string(),
+            description: String::new(),
+            mouser_pn: "M-PN".to_string(),
+            product_url: String::new(),
+            unit_price,
+            availability,
+        }
+    }
+
+    fn digikey(unit_price: f64, availability: u32) -> DigiKeyPart {
+        DigiKeyPart {
+            manufacturer: "Texas Instruments".to_string(),
+            manufacturer_pn: "PN".to_string(),
+            description: String::new(),
+            digikey_pn: "D-PN".to_string(),
+            product_url: String::new(),
+            unit_price,
+            availability,
+        }
+    }
+
+    #[test]
+    fn chooses_cheapest_supplier_or_reports_both_reasons() {
+        use SupplierChoice::*;
+        assert!(matches!(choose_supplier(Ok(mouser(1.0, 10)), Ok(digikey(2.0, 10))), Mouser(_)));
+        assert!(matches!(choose_supplier(Ok(mouser(2.0, 10)), Ok(digikey(1.0, 10))), Digikey(_)));
+        assert!(matches!(choose_supplier(Ok(mouser(1.0, 10)), Err("not in stock".to_string())), Mouser(_)));
+        assert!(matches!(choose_supplier(Err("not in stock".to_string()), Ok(digikey(1.0, 10))), Digikey(_)));
+        match choose_supplier(Err("only 2 in stock".to_string()), Err("discontinued".to_string())) {
+            Unresolved(reason) => assert_eq!(reason, "Mouser: only 2 in stock; Digikey: discontinued"),
+            other => panic!("expected Unresolved, got {:?}", other),
+        }
+    }
 }

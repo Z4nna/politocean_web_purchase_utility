@@ -2,7 +2,7 @@ use askama::Template;
 use umya_spreadsheet::{Spreadsheet};
 use crate::{
     handlers,
-    data::{errors::{self, DataError}, item, options, order, user}, models::{app::{AppState, CurrentUser}, templates::{CoffeePageTemplate, EditOrderTemplate}}
+    data::{errors::{self, DataError}, excel, item, options, order, user}, models::{app::{AppState, CurrentUser}, templates::{BomRow, CoffeePageTemplate, EditOrderTemplate, ViewBomTemplate}}
 };
 use axum::{
     body::Body, extract::{Multipart, Path, State}, http::{header, HeaderValue, StatusCode}, response::{Html, IntoResponse, Redirect, Response}, Extension, Form, Json
@@ -107,7 +107,8 @@ pub async fn edit_order_handler(
 
 /// Extracts the submitted item rows from the order form. Rows are identified by
 /// the `items_manufacturer_pn_<index>` keys produced by the client-side JS.
-fn parse_order_items(form: &HashMap<String, String>) -> Vec<order::NewOrderItem> {
+/// Fails if a row has a missing, non-numeric or non-positive quantity.
+pub fn parse_order_items(form: &HashMap<String, String>) -> Result<Vec<order::NewOrderItem>, DataError> {
     let mut indices: HashSet<i32> = HashSet::new();
     for key in form.keys() {
         if let Some(index_str) = key.strip_prefix("items_manufacturer_pn_") {
@@ -121,15 +122,17 @@ fn parse_order_items(form: &HashMap<String, String>) -> Vec<order::NewOrderItem>
         .into_iter()
         .map(|index| {
             let get = |prefix: &str| form.get(&format!("{}{}", prefix, index)).map(|s| s.trim().to_string());
-            order::NewOrderItem {
+            let quantity = get("items_quantity_")
+                .and_then(|q| q.parse::<i32>().ok())
+                .filter(|q| *q >= 1)
+                .ok_or_else(|| DataError::BadRequest("Item quantities must be whole numbers greater than 0.".to_string()))?;
+            Ok(order::NewOrderItem {
                 manufacturer: get("items_manufacturer_").unwrap_or_default(),
                 manufacturer_pn: get("items_manufacturer_pn_").unwrap_or_default(),
                 proposal: get("items_proposal_").unwrap_or_else(|| "Elettronica generale".to_string()),
                 project: get("items_project_").unwrap_or_else(|| "Varie per lab".to_string()),
-                quantity: get("items_quantity_")
-                    .and_then(|q| q.parse::<i32>().ok())
-                    .unwrap_or(1),
-            }
+                quantity,
+            })
         })
         .collect()
 }
@@ -143,7 +146,8 @@ pub async fn submit_order_handler(
     let description = form.get("description").map(|s| s.trim().to_string()).unwrap_or_default();
     let area_division = form.get("area_division").map(|s| s.trim().to_string()).unwrap_or_default();
     let area_sub_area = form.get("area_sub_area").map(|s| s.trim().to_string()).unwrap_or_default();
-    let items = parse_order_items(&form);
+    let items = parse_order_items(&form)?;
+    order::ensure_not_confirmed(&app_state.connection_pool, order_id).await?;
 
     // Applied atomically: on any failure (e.g. an invalid area/project/proposal)
     // the whole edit rolls back, so the order is never lost or half-updated.
@@ -161,11 +165,13 @@ pub async fn submit_order_handler(
 }
 
 pub async fn mark_order_ready_handler(State(app_state): State<AppState>, _session: Session, Path(order_id): Path<i32>) -> Result<Response, errors::AppError>{
+    order::ensure_not_confirmed(&app_state.connection_pool, order_id).await?;
     order::mark_order_ready(&app_state.connection_pool, order_id).await?;
     Ok(Redirect::to("/home").into_response())
 }
 
 pub async fn mark_order_unready_handler(State(app_state): State<AppState>,_session: Session,Path(order_id): Path<i32>,) -> Result<Response, errors::AppError>{
+    order::ensure_not_confirmed(&app_state.connection_pool, order_id).await?;
     order::mark_order_unready(&app_state.connection_pool, order_id).await?;
     Ok(Redirect::to("/home").into_response())
 }
@@ -292,6 +298,60 @@ pub async fn coffee_page_handler(
     Ok(Html(html_string).into_response())
 }
 
+/// "View BOM" page: for each item, the supplier chosen by the last BOM generation
+/// with its prices (VAT included), or why the item could not be sourced.
+pub async fn view_bom_handler(
+    State(app_state): State<AppState>,
+    Extension(current_user): Extension<CurrentUser>,
+    Path(order_id): Path<i32>,
+) -> Result<Response, errors::AppError> {
+    let order = order::get_order_from_id(order_id, &app_state.connection_pool).await?;
+    let mut items = item::get_items_from_order(order_id, &app_state.connection_pool).await?;
+    items.sort_by(|a, b| (&a.manufacturer, &a.manufacturer_pn).cmp(&(&b.manufacturer, &b.manufacturer_pn)));
+
+    let mut total = 0.0;
+    let rows = items.into_iter().map(|item| bom_row(item, &mut total)).collect();
+
+    let html_string = ViewBomTemplate {
+        order,
+        rows,
+        total_vat: format!("{:.2}", total),
+        is_board: current_user.can_access_board(),
+    }.render().unwrap();
+    Ok(Html(html_string).into_response())
+}
+
+/// Formats one item for the "View BOM" page, adding its price to `total`.
+fn bom_row(item: crate::models::item::OrderItem, total: &mut f64) -> BomRow {
+    let (provider, supplier_pn) = match (item.mouser_pn, item.digikey_pn) {
+        (Some(pn), _) => ("Mouser", pn),
+        (None, Some(pn)) => ("Digikey", pn),
+        (None, None) => ("", String::new()),
+    };
+    let (unit_price_vat, total_vat, note) = match item.unit_price {
+        // An item added or edited after the last generation has no note yet.
+        _ if provider.is_empty() => (String::new(), String::new(), item.bom_note.unwrap_or_else(|| "Not looked up yet: generate the BOM.".to_string())),
+        Some(unit_price) => {
+            let unit = unit_price * excel::VAT_MULTIPLIER;
+            let line = unit * item.quantity as f64;
+            *total += line;
+            (format!("{:.4}", unit), format!("{:.2}", line), String::new())
+        }
+        // Supplier chosen by a BOM generated before prices were stored.
+        None => ("n/a: regenerate the BOM".to_string(), "n/a".to_string(), String::new()),
+    };
+    BomRow {
+        manufacturer: item.manufacturer,
+        manufacturer_pn: item.manufacturer_pn,
+        quantity: item.quantity,
+        provider,
+        supplier_pn,
+        unit_price_vat,
+        total_vat,
+        note,
+    }
+}
+
 pub async fn download_bom_handler(
     State(app_state): State<AppState>,
     _session: Session,
@@ -381,6 +441,7 @@ pub async fn delete_order_handler(
     _session: Session,
     Path(order_id): Path<i32>,
 ) -> Result<Response, errors::AppError> {
+    order::ensure_not_confirmed(&app_state.connection_pool, order_id).await?;
     order::delete_order(&app_state.connection_pool, order_id).await?;
     println!("Deleted order {}", order_id);
     Ok(Redirect::to("/home").into_response())
@@ -462,6 +523,7 @@ pub async fn bulk_add_handler(
     multipart: Multipart,
 ) -> Result<Response, errors::AppError> {
     let (fields, spreadsheet) = handlers::new_order::read_bom_upload(multipart).await?;
+    order::ensure_not_confirmed(&app_state.connection_pool, order_id).await?;
     order::bulk_add_from_bom(
         &app_state.connection_pool,
         order_id,
@@ -470,4 +532,54 @@ pub async fn bulk_add_handler(
         &spreadsheet
     ).await?;
     return Ok(Redirect::to("/home").into_response());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn form(quantity: &str) -> HashMap<String, String> {
+        HashMap::from([
+            ("items_manufacturer_0".to_string(), "TI".to_string()),
+            ("items_manufacturer_pn_0".to_string(), " LM358 ".to_string()),
+            ("items_quantity_0".to_string(), quantity.to_string()),
+        ])
+    }
+
+    #[test]
+    fn bom_row_prices_include_vat_and_explain_missing_results() {
+        let item = |mouser_pn: Option<&str>, unit_price, bom_note: Option<&str>| crate::models::item::OrderItem {
+            order_id: 1,
+            manufacturer: "TI".to_string(),
+            manufacturer_pn: "LM358".to_string(),
+            quantity: 10,
+            proposal: String::new(),
+            project: String::new(),
+            mouser_pn: mouser_pn.map(str::to_string),
+            digikey_pn: None,
+            unit_price,
+            bom_note: bom_note.map(str::to_string),
+        };
+        let mut total = 0.0;
+
+        let row = bom_row(item(Some("595-LM358"), Some(1.0), None), &mut total);
+        assert_eq!((row.provider, row.unit_price_vat.as_str(), row.total_vat.as_str()), ("Mouser", "1.2200", "12.20"));
+
+        let row = bom_row(item(None, None, Some("Mouser: not in stock")), &mut total);
+        assert_eq!((row.provider, row.note.as_str()), ("", "Mouser: not in stock"));
+
+        // No stored price: shown as unknown, not as free.
+        let row = bom_row(item(Some("595-LM358"), None, None), &mut total);
+        assert_eq!(row.total_vat, "n/a");
+        assert!((total - 12.2).abs() < 1e-9);
+    }
+
+    #[test]
+    fn rejects_non_positive_or_invalid_quantities() {
+        let items = parse_order_items(&form("3")).unwrap();
+        assert_eq!((items.len(), items[0].quantity, items[0].manufacturer_pn.as_str()), (1, 3, "LM358"));
+        for bad in ["0", "-2", "abc", ""] {
+            assert!(parse_order_items(&form(bad)).is_err(), "quantity {:?} should be rejected", bad);
+        }
+    }
 }

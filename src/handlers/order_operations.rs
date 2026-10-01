@@ -1,6 +1,5 @@
-use crate::models::{order_operations::{MergeOrderOption, MergeOrderRequest}, templates::OrderArithmeticPageTemplate};
+use crate::models::{order_operations::MergeOrderRequest, templates::OrderArithmeticPageTemplate};
 use askama::Template;
-use futures::future::join_all;
 use crate::{
     models::{app::AppState, order_operations::{Order, ScaleOrderRequest}},
     data::{errors, order},
@@ -44,23 +43,27 @@ pub async fn list_orders_handler(
 
 pub async fn scale_order_handler (
     State(app_state): State<AppState>,
-    session: Session,
+    Extension(current_user): Extension<CurrentUser>,
     Json(payload): Json<ScaleOrderRequest>
 ) -> Result<Json<serde_json::Value>, errors::AppError> {
+    if !payload.scale_factor.is_finite() || payload.scale_factor <= 0.0 {
+        return Err(errors::DataError::BadRequest("The scale factor must be greater than 0.".to_string()).into());
+    }
     // check user is author of the requested order or board
     let order_author_id = sqlx::query! (
         "SELECT author_id FROM orders WHERE id = $1",
         payload.order_id
     ).fetch_one(&app_state.connection_pool).await
     .map_err(|_| errors::AppError::Database(errors::DataError::FailedQuery("Order not found.".to_string())))?.author_id;
-    
-    if session.get::<i32>("authenticated_user_id").await.unwrap_or(None).unwrap_or(-1) != order_author_id {
+
+    if !current_user.can_access_board() && current_user.user_id != Some(order_author_id) {
        return Err(errors::AppError::Database(errors::DataError::FailedQuery("Not authorized.".to_string())));
     }
+    order::ensure_not_confirmed(&app_state.connection_pool, payload.order_id).await?;
 
-    // scale order, using integer quantities
+    // scale order, using integer quantities (an item never drops below 1)
     let rows_updated = sqlx::query(
-        "UPDATE order_items SET quantity = ROUND(quantity * $1)::int WHERE order_id = $2"
+        "UPDATE order_items SET quantity = GREATEST(1, ROUND(quantity * $1)::int) WHERE order_id = $2"
     )
     .bind(payload.scale_factor)
     .bind(payload.order_id)
@@ -111,47 +114,11 @@ pub async fn merge_order_handler (
     if user_role != "board" && author_ids.iter().any(|a| *a != user_id) {
         return Err(errors::AppError::Database(errors::DataError::FailedQuery("Not authorized.".to_string())));
     }
-    println!("authorised");
-    // edit target based on merge options
-    let options = MergeOrderOption::AddQuantities;
-    match options {
-        MergeOrderOption::KeepSrcQuantity => {
-            
-        }
-        MergeOrderOption::KeepTargetQuantity => {
+    order::ensure_not_confirmed(&app_state.connection_pool, payload.source_id).await?;
+    order::ensure_not_confirmed(&app_state.connection_pool, payload.target_id).await?;
 
-        }
-        MergeOrderOption::KeepLowestQuantity => {
-
-        }
-        MergeOrderOption::KeepHighestQuantity => {
-
-        }
-        MergeOrderOption::AddQuantities => {
-            // get all items from src - stupid but funny trick to do everything inside map :)
-            join_all(sqlx::query!(
-                "SELECT * FROM order_items WHERE order_id = $1",
-                payload.source_id
-            ).fetch_all(&app_state.connection_pool)
-            .await
-            .map_err(|e| errors::AppError::Database(errors::DataError::FailedQuery(e.to_string())))?
-            .iter()
-            .map(async |item| order::add_item_to_order( // by defaults sums quantities on conflict
-                    &app_state.connection_pool, 
-                    payload.target_id, 
-                    item.manufacturer.clone(),
-                    item.manufacturer_pn.clone(),
-                    item.quantity.clone(), 
-                    item.proposal.clone(), 
-                    item.project.clone(), 
-                    item.mouser_pn.clone(), 
-                    item.digikey_pn.clone()
-                ).await)).await;
-        }
-    }
-
-    // remove source
-    crate::data::order::delete_order(&app_state.connection_pool, payload.source_id).await?;
+    // Quantities of items present in both orders are summed.
+    order::merge_orders(&app_state.connection_pool, payload.source_id, payload.target_id).await?;
 
     Ok(axum::Json(serde_json::json!({
         "status": "success"

@@ -147,6 +147,7 @@ fn edit_order_routes(app_state: app::AppState) -> Router<app::AppState> {
         .route("/orders/:id/edit/submit", post(edit_order::submit_order_handler))
         .route("/orders/:id/edit/bulk-add", post(edit_order::bulk_add_handler))
         .route("/orders/:id/edit/generate-bom", post(edit_order::generate_bom_handler))
+        .route("/orders/:id/bom", get(edit_order::view_bom_handler))
         .route("/orders/:id/edit/download-bom", post(edit_order::download_bom_handler))
         .route("/orders/:id/edit/create-mouser-cart", post(edit_order::download_mouser_cart_handler))
         .route("/orders/:id/edit/download-digikey-cart", post(edit_order::download_digikey_cart_handler))

@@ -187,10 +187,18 @@ struct JobStatusResponse {
     status: String,
 }
 
+// Note: fixed cap; the supplier lookups already time out on their own, this
+// only stops a stuck job from holding the confirm request open forever.
+const BOM_JOB_TIMEOUT: Duration = Duration::from_secs(10 * 60);
+
 pub async fn wait_for_bom_job_to_finish(order_id: i32, app_state: AppState) -> Result<(), AppError> {
     println!("waiting for bom to finish...");
+    let deadline = tokio::time::Instant::now() + BOM_JOB_TIMEOUT;
 
     loop {
+        if tokio::time::Instant::now() >= deadline {
+            return Err(DataError::FailedQuery("BOM generation timed out, the order was not confirmed. Try again.".to_string()).into());
+        }
         let res = edit_order::get_generate_bom_job_status_handler(
             State(app_state.clone()), 
             Path(order_id)
@@ -214,7 +222,7 @@ pub async fn wait_for_bom_job_to_finish(order_id: i32, app_state: AppState) -> R
 
         if body.status == "failed" {
             println!("❌ Job failed");
-            break;
+            return Err(DataError::FailedQuery("BOM generation failed, the order was not confirmed. Try again.".to_string()).into());
         }
 
         sleep(Duration::from_secs(1)).await;

@@ -36,6 +36,7 @@ function addItemEntry(proposal = "", project = "", manufacturer = "", manufactur
     quantityInput.type = 'number';
     quantityInput.name = `items_quantity_${itemIndex}`;
     quantityInput.value = quantity;
+    quantityInput.min = 1;
     quantityInput.required = true;
 
     const deleteButton = document.createElement('button');

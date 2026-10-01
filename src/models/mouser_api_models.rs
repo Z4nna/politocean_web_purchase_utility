@@ -20,6 +20,8 @@ pub struct InnerRequest {
 #[serde(rename_all = "PascalCase")]
 pub struct MouserResponse {
     pub search_results: Option<SearchResults>,
+    // API-level problems (bad key, rate limit) are reported here, in a 200 response.
+    pub errors: Option<Vec<serde_json::Value>>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -38,6 +40,10 @@ pub struct Part {
     pub product_detail_url: Option<String>,
     pub price_breaks: Option<Vec<PriceBreak>>,
     pub availability: Option<String>,
+    pub availability_in_stock: Option<String>,
+    pub lifecycle_status: Option<String>,
+    // Sent as the string "true"/"false"; kept loose so a format change cannot break parsing.
+    pub is_discontinued: Option<serde_json::Value>,
 }
 
 #[derive(Deserialize, Debug, Clone)]

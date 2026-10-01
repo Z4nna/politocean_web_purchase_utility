@@ -8,4 +8,8 @@ pub struct OrderItem {
     pub project: String,
     pub mouser_pn: Option<String>,
     pub digikey_pn: Option<String>,
+    // Result of the last BOM generation: price (excl. VAT) from the chosen supplier,
+    // or the reason the item could not be sourced.
+    pub unit_price: Option<f64>,
+    pub bom_note: Option<String>,
 }
