@@ -57,7 +57,7 @@ pub async fn scale_order_handler (
     .map_err(|_| errors::AppError::Database(errors::DataError::FailedQuery("Order not found.".to_string())))?.author_id;
 
     if !current_user.can_access_board() && current_user.user_id != Some(order_author_id) {
-       return Err(errors::AppError::Database(errors::DataError::FailedQuery("Not authorized.".to_string())));
+       return Err(errors::AppError::Database(errors::DataError::Forbidden("Not authorized.".to_string())));
     }
     order::ensure_not_confirmed(&app_state.connection_pool, payload.order_id).await?;
 
@@ -112,7 +112,7 @@ pub async fn merge_order_handler (
         return Err(errors::AppError::Database(errors::DataError::FailedQuery("Invalid orders.".to_string())));
     }
     if user_role != "board" && author_ids.iter().any(|a| *a != user_id) {
-        return Err(errors::AppError::Database(errors::DataError::FailedQuery("Not authorized.".to_string())));
+        return Err(errors::AppError::Database(errors::DataError::Forbidden("Not authorized.".to_string())));
     }
     order::ensure_not_confirmed(&app_state.connection_pool, payload.source_id).await?;
     order::ensure_not_confirmed(&app_state.connection_pool, payload.target_id).await?;

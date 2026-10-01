@@ -1,11 +1,10 @@
-use std::{time::Duration, usize};
+use std::usize;
 use askama::Template;
 use dotenvy::dotenv;
 use lettre::{message::{header, MultiPart, SinglePart}, transport::smtp::authentication::Credentials, AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
 use serde::{Deserialize, Serialize};
-use tokio::time::sleep;
 use crate::{
-    data::{errors::{self, AppError, DataError}, order}, handlers::{self, edit_order}, models::{app::AppState, templates::ProfHomepageTemplate}
+    data::{errors::{self, AppError, DataError}, order}, handlers, models::{app::AppState, templates::ProfHomepageTemplate}
 };
 use axum::{
     extract::{Path, State}, response::{Html, IntoResponse, Response}, Json
@@ -32,16 +31,13 @@ pub struct OrderNotificationRequest {
 
 }
 
+/// Emails the order's BOM and cart files to the professor. The BOM must already
+/// have been generated (step 1 of the confirmation).
 pub async fn notify_prof_order_confirmed_handler(
     State(app_state): State<AppState>,
     session: Session,
     Json(payload): Json<OrderNotificationRequest>
 ) -> Result<(), AppError> {
-    // generate bom
-    handlers::edit_order::generate_bom_handler(State(app_state.clone()), session.clone(), Path(payload.order_id)).await?;
-    
-    wait_for_bom_job_to_finish(payload.order_id, app_state.clone()).await?;
-
     // download carts
     let mouser_cart = axum::body::to_bytes(
         handlers::edit_order::download_mouser_cart_handler(
@@ -178,55 +174,6 @@ pub async fn notify_prof_order_confirmed_handler(
 
     mailer.send(email).await.map_err(|e| DataError::Mail(e.to_string()))?;
     println!("Email sent successfully!");
-
-    Ok(())
-}
-
-#[derive(Deserialize)]
-struct JobStatusResponse {
-    status: String,
-}
-
-// Note: fixed cap; the supplier lookups already time out on their own, this
-// only stops a stuck job from holding the confirm request open forever.
-const BOM_JOB_TIMEOUT: Duration = Duration::from_secs(10 * 60);
-
-pub async fn wait_for_bom_job_to_finish(order_id: i32, app_state: AppState) -> Result<(), AppError> {
-    println!("waiting for bom to finish...");
-    let deadline = tokio::time::Instant::now() + BOM_JOB_TIMEOUT;
-
-    loop {
-        if tokio::time::Instant::now() >= deadline {
-            return Err(DataError::FailedQuery("BOM generation timed out, the order was not confirmed. Try again.".to_string()).into());
-        }
-        let res = edit_order::get_generate_bom_job_status_handler(
-            State(app_state.clone()), 
-            Path(order_id)
-        ).await?;
-
-        println!("job status request sent.");
-        if !res.status().is_success() {
-            eprintln!("Error checking job status: {}", res.status());
-            sleep(Duration::from_secs(2)).await;
-            continue;
-        }
-        let bytes = axum::body::to_bytes(res.into_body(), usize::MAX).await.map_err(|e| DataError::Internal(e.to_string()))?;
-        let body: JobStatusResponse = serde_json::from_slice(&bytes)
-            .map_err(|e| DataError::Internal(format!("Failed to parse JSON: {}", e)))?;
-        println!("Job status: {}", body.status);
-
-        if body.status == "done" {
-            println!("✅ Job completed!");
-            break;
-        }
-
-        if body.status == "failed" {
-            println!("❌ Job failed");
-            return Err(DataError::FailedQuery("BOM generation failed, the order was not confirmed. Try again.".to_string()).into());
-        }
-
-        sleep(Duration::from_secs(1)).await;
-    }
 
     Ok(())
 }

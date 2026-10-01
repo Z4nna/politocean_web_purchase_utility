@@ -18,10 +18,20 @@
         <br><br>
         <p>Generating BOM... this might take a while😓</p>
         <p>In the meantime, go grab a coffee!</p>
+        {% if confirm %}
+        <p>The order will be confirmed as soon as the BOM is ready.</p>
+        {% endif %}
     </div>
+
+    {% if confirm %}
+    <form id="finish-confirm" action="/orders/{{ order_id }}/confirm/finish" method="post" hidden></form>
+    {% endif %}
 
     <script>
         const orderId = {{ order_id }};
+        // When confirming an order, a successful generation is followed by the
+        // second step (email + state change); a failed one confirms nothing.
+        const finishConfirm = document.getElementById("finish-confirm");
 
         async function pollStatus() {
             console.log("Polling status for order:", orderId);
@@ -30,9 +40,18 @@
                 const result = await response.json();
 
                 if (result.status === "done") {
-                    window.location.href = `/orders/${orderId}/edit`;
+                    if (finishConfirm) {
+                        finishConfirm.submit();
+                    } else {
+                        window.location.href = `/orders/${orderId}/edit`;
+                    }
                 } else if (result.status === "failed") {
-                    alert("❌ BOM generation failed. Please try again later.");
+                    if (finishConfirm) {
+                        alert("❌ BOM generation failed: the order was not confirmed. Please try again later.");
+                        window.location.href = "/board/orders";
+                    } else {
+                        alert("❌ BOM generation failed. Please try again later.");
+                    }
                 } else {
                     setTimeout(pollStatus, 2000); // Retry after 2 seconds
                 }

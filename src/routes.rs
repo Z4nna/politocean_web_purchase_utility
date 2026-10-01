@@ -154,6 +154,7 @@ fn edit_order_routes(app_state: app::AppState) -> Router<app::AppState> {
         .route("/orders/:id/ready", post(edit_order::mark_order_ready_handler))
         .route("/orders/:id/unready", post(edit_order::mark_order_unready_handler))
         .route("/orders/:id/confirm", post(edit_order::mark_order_confirmed_handler))
+        .route("/orders/:id/confirm/finish", post(edit_order::finish_order_confirmation_handler))
         .route("/orders/:id/unconfirm", post(edit_order::mark_order_unconfirmed_handler))
         .route("/orders/:id/delete", post(edit_order::delete_order_handler))
         // Only the order's author or the board/prof may reach these routes.

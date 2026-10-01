@@ -89,6 +89,8 @@ pub struct ProfHomepageTemplate {
 #[template(path = "pages/coffee.html")]
 pub struct CoffeePageTemplate {
     pub order_id: i32,
+    /// Shown while confirming an order: on success the page finishes the confirmation.
+    pub confirm: bool,
 }
 
 #[derive(Template)]

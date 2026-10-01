@@ -3,7 +3,7 @@ use crate::models::digikey_api_models::DigiKeyPart;
 use crate::models::item::OrderItem;
 use crate::models::mouser_api_models::MouserPart;
 use futures::stream::{self, StreamExt};
-use sqlx::{PgPool, types::time::Date};
+use sqlx::{PgExecutor, PgPool, types::time::Date};
 use time::format_description;
 use umya_spreadsheet::{Spreadsheet};
 use crate::data::{mouser_apis};
@@ -181,7 +181,7 @@ pub async fn mark_order_unconfirmed(pool: &PgPool, order_id: i32) -> Result<(), 
 }
 
 pub async fn create_order(
-    pool: &PgPool,
+    executor: impl PgExecutor<'_>,
     author_id: i32,
     description: String,
     area_division: String,
@@ -196,9 +196,28 @@ pub async fn create_order(
         area_division,
         area_sub_area
     )
-    .fetch_one(pool)
+    .fetch_one(executor)
     .await
     .map_err(|e| DataError::Query(e))?;
+    Ok(order_id)
+}
+
+/// Creates an order together with its items in one transaction, so a failing
+/// item (e.g. an archived proposal) does not leave a half-filled order behind.
+pub async fn create_order_with_items(
+    pool: &PgPool,
+    author_id: i32,
+    description: String,
+    area_division: String,
+    area_sub_area: String,
+    items: Vec<NewOrderItem>,
+) -> Result<i32, DataError> {
+    let mut tx = pool.begin().await.map_err(DataError::Query)?;
+    let order_id = create_order(&mut *tx, author_id, description, area_division, area_sub_area).await?;
+    for item in items {
+        add_item_to_order(&mut *tx, order_id, item.manufacturer, item.manufacturer_pn, item.quantity, item.proposal, item.project, None, None).await?;
+    }
+    tx.commit().await.map_err(DataError::Query)?;
     Ok(order_id)
 }
 
@@ -318,7 +337,7 @@ pub async fn update_order_and_items(
 }
 
 pub async fn add_item_to_order(
-    pool: &PgPool,
+    executor: impl PgExecutor<'_>,
     order_id: i32,
     manufacturer: String,
     manufacturer_pn: String,
@@ -342,7 +361,7 @@ pub async fn add_item_to_order(
         mouser_pn,
         digikey_pn
     )
-    .execute(pool)
+    .execute(executor)
     .await
     .map_err(|e| DataError::Query(e))?;
     Ok(())
@@ -510,14 +529,18 @@ pub async fn create_order_from_kicad_bom(
     project: String,
     kicad_bom_file: &Spreadsheet
 ) -> Result<(), DataError> {
-    // create order
-    let order_id = create_order(pool, author_id, description, area_division, area_sub_area).await?;
-    // read kicad bom file, for each item, nsert into db
     let bom_items = excel::parse_kicad_bom_file(kicad_bom_file).map_err(|e| DataError::FailedQuery(e))?;
-    for item in bom_items {
-        println!("{}: {}x {}", item.manifacturer, item.quantity, item.manifacturer_pn);
-        add_item_to_order(pool, order_id, item.manifacturer, item.manifacturer_pn, item.quantity, proposal.clone(), project.clone(), None, None).await?;
-    }
+    let items = bom_items
+        .into_iter()
+        .map(|item| NewOrderItem {
+            manufacturer: item.manifacturer,
+            manufacturer_pn: item.manifacturer_pn,
+            quantity: item.quantity,
+            proposal: proposal.clone(),
+            project: project.clone(),
+        })
+        .collect();
+    create_order_with_items(pool, author_id, description, area_division, area_sub_area, items).await?;
     Ok(())
 }
 
@@ -528,12 +551,14 @@ pub async fn bulk_add_from_bom(
     project: String,
     bom: &Spreadsheet
 ) -> Result<(), DataError> {
-    // read bom file, for each item, nsert into db
+    // read bom file, for each item, insert into db: all of them or none
     let bom_items = excel::parse_kicad_bom_file(bom).map_err(|e| DataError::FailedQuery(e))?;
+    let mut tx = pool.begin().await.map_err(DataError::Query)?;
     for item in bom_items {
         println!("{}: {}x {}", item.manifacturer, item.quantity, item.manifacturer_pn);
-        add_item_to_order(pool, order_id, item.manifacturer, item.manifacturer_pn, item.quantity, proposal.clone(), project.clone(), None, None).await?;
+        add_item_to_order(&mut *tx, order_id, item.manifacturer, item.manifacturer_pn, item.quantity, proposal.clone(), project.clone(), None, None).await?;
     }
+    tx.commit().await.map_err(DataError::Query)?;
     Ok(())
 }
 

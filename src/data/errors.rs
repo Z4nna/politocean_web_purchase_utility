@@ -33,6 +33,9 @@ pub enum DataError {
     Unauthorized(String),
 
     #[error("{0}")]
+    Forbidden(String),
+
+    #[error("{0}")]
     BadRequest(String),
 
     #[error("{0}")]
@@ -59,6 +62,7 @@ impl IntoResponse for AppError {
         eprintln!("Request failed: {:?}", self);
         let (status, message) = match self {
             AppError::Database(e @ DataError::Unauthorized(_)) => (StatusCode::UNAUTHORIZED, e.to_string()),
+            AppError::Database(e @ DataError::Forbidden(_)) => (StatusCode::FORBIDDEN, e.to_string()),
             AppError::Database(e @ DataError::BadRequest(_)) => (StatusCode::BAD_REQUEST, e.to_string()),
             AppError::Database(e @ DataError::TooManyRequests(_)) => (StatusCode::TOO_MANY_REQUESTS, e.to_string()),
             AppError::Database(e @ (DataError::FailedQuery(_) | DataError::TokenError(_) | DataError::Mail(_))) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
@@ -80,5 +84,16 @@ impl IntoResponse for AppError {
         );
 
         (status, Html(html_string)).into_response()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn forbidden_maps_to_403() {
+        let response = AppError::Database(DataError::Forbidden("Not authorized.".to_string())).into_response();
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
     }
 }

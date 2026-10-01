@@ -96,24 +96,8 @@ pub async fn submit_order_handler(
     let description = required_field(&user_form, "description")?;
     let area_division = required_field(&user_form, "area_division")?;
     let area_sub_area = required_field(&user_form, "area_sub_area")?;
-    // Validate the items before creating anything, so a bad row leaves no empty order behind.
     let items = crate::handlers::edit_order::parse_order_items(&user_form)?;
-    let order_id = order::create_order(&app_state.connection_pool, order_author_id, description, area_division, area_sub_area).await?;
-
-    for item in items {
-        order::add_item_to_order(
-            &app_state.connection_pool,
-            order_id,
-            item.manufacturer,
-            item.manufacturer_pn,
-            item.quantity,
-            item.proposal,
-            item.project,
-            None,
-            None
-        )
-        .await?;
-    }
+    order::create_order_with_items(&app_state.connection_pool, order_author_id, description, area_division, area_sub_area, items).await?;
 
     Ok(Redirect::to("/home").into_response())
 }
